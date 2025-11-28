@@ -27,19 +27,17 @@ ui <- fluidPage(
         selected = trt_choices, 
         multiple = TRUE
       ),
-      selectInput(
+      checkboxGroupInput(
         inputId  = "WHF",
-        label    = "Select Patient Status (WHF):",
+        label    = "Select Patient Status:",
         choices  = whf_choices,
-        selected = whf_choices,
-        multiple = TRUE
+        selected = whf_choices
       ),
-      selectInput(
+      checkboxGroupInput(
         inputId  = "HOSP",
         label    = "Select Hospitalisation Status:",
         choices  = hosp_choices,
-        selected = hosp_choices,
-        multiple = TRUE
+        selected = hosp_choices
       )
     ),
     
@@ -71,11 +69,18 @@ server <- function(input, output) {
         y = after_stat(100 * count / sum(count)),
         fill = WHF
       )) +
-      geom_bar(position = "stack") +
+      geom_bar(position = "stack", colour = "black") +
+      scale_fill_manual(values = c("Healthy"= "lightyellow", "Worsening Heart Failure" = "lightblue"))+
       labs(
         fill = "Patient Status",
         x    = "Patient Hospitalisation Status",
-        y    = "Percentage (%)"
+        y    = "Percentage (%)",
+        title = "Effect of Worsening Heart Failure on Hospitalisation Levels between Groups")+
+      theme(
+        plot.title = element_text(face = "bold", size = 18),
+        axis.title.x = element_text(face = "bold", size = 12),
+        axis.title.y = element_text(face = "bold", size = 12),
+        axis.text =  element_text(face = "bold", size = 10)
       )
   })
   
