@@ -66,7 +66,7 @@ ui <- dashboardPage(
           
 # Rate of mortality between groups
       box(
-        title = "Rate of Mortality between Groups",
+        title = "Filter Box - Rate of Mortality between Groups",
         status = "primary", solidHeader = TRUE,
         width = 4,
         selectInput(
@@ -94,7 +94,7 @@ ui <- dashboardPage(
           
  # Worsening heart failure          
       box(
-        title = "Worsening Heart Failure and Patient Status",
+        title = "Filter Box - Worsening Heart Failure and Hospitalisation Status",
         status = "primary", solidHeader = TRUE,
         width = 4,
       selectInput(
@@ -118,7 +118,7 @@ ui <- dashboardPage(
       )
 ),
       box(
-        title = "Hospitalisation by Patient Status",
+        title = "Worsening Heart Failure and Hospitalisation Status",
         status = "primary", solidHeader = TRUE,
         width = 6,
         plotOutput("plot_outcomes_whf", height = 500)
@@ -150,7 +150,7 @@ server <- function(input, output) {
         y = after_stat(100 * count / sum(count)),
         fill = DEATH
       )) +
-      geom_bar(position = "stack", colour = "black") +
+      geom_bar(position = "dodge", colour = "black") +
       scale_fill_manual(values = c("Alive"= "lightyellow", "Deceased" = "darkblue"))+
       labs(
         fill = "Patient Status",
@@ -188,7 +188,7 @@ server <- function(input, output) {
         y = after_stat(100 * count / sum(count)),
         fill = WHF
       )) +
-      geom_bar(position = "stack", colour = "black") +
+      geom_bar(position = "dodge", colour = "black") +
       scale_fill_manual(values = c("Healthy"= "lightyellow", "Worsening Heart Failure" = "lightblue"))+
       labs(
         fill = "Patient Status",
