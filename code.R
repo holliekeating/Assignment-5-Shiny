@@ -3,6 +3,7 @@ library(shinydashboard)
 library(tidyverse)
 library(readr)
 library(DT)
+library(plotly)
 
 dig.df <- read_csv("data/DIG.csv")%>%
   mutate(TRTMT = recode(TRTMT, '0' = "Placebo", `1` = "Treatment"),
@@ -88,7 +89,7 @@ ui <- dashboardPage(
         title = "Rate of Mortality between Groups",
         status = "primary", solidHeader = TRUE,
         width = 6,
-        plotOutput("plot_outcomes_mortality", height = 500),
+        plotlyOutput("plot_outcomes_mortality", height = 500),
         br()
       ),
           
@@ -121,7 +122,7 @@ ui <- dashboardPage(
         title = "Worsening Heart Failure and Hospitalisation Status",
         status = "primary", solidHeader = TRUE,
         width = 6,
-        plotOutput("plot_outcomes_whf", height = 500)
+        plotlyOutput("plot_outcomes_whf", height = 500)
       )
 ) 
 )
@@ -140,16 +141,20 @@ server <- function(input, output) {
       filter(TRTMT %in% input$TRTMT) %>%
       filter(DEATH   %in% input$DEATH)
   })
-  output$plot_outcomes_mortality <- renderPlot({ 
+  output$plot_outcomes_mortality <- renderPlotly({ 
     dat <- mortality_sub()
     req(nrow(dat) > 0)  
     
-    dat %>%
+    plot_outcomes_mortality1 <- 
+     dat %>%
       ggplot(aes(
         x = TRTMT,
         y = after_stat(100 * count / sum(count)),
-        fill = DEATH
-      )) +
+        fill = DEATH,
+        text = paste0(
+          "Treatment Group: ", TRTMT, "<br>",
+          "Patient Status: ", DEATH
+      ))) +
       geom_bar(position = "dodge", colour = "black") +
       scale_fill_manual(values = c("Alive"= "lightyellow", "Deceased" = "darkblue"))+
       labs(
@@ -162,6 +167,7 @@ server <- function(input, output) {
         axis.title.y = element_text(face = "bold", size = 12),
         axis.text =  element_text(face = "bold", size = 10)
       )
+    ggplotly(plot_outcomes_mortality1, tooltip = "text")
   })
   
   output$table_outcomes_mortality <- renderDT({ 
@@ -178,16 +184,20 @@ server <- function(input, output) {
       filter(WHF   %in% input$WHF)   %>%
       filter(HOSP  %in% input$HOSP)
   })
-  output$plot_outcomes_whf <- renderPlot({ 
+  output$plot_outcomes_whf <- renderPlotly({ 
     dat <- patients_sub()
     req(nrow(dat) > 0)  
     
+  plot_outcomes_whf1 <- 
     dat %>%
       ggplot(aes(
         x = HOSP,
         y = after_stat(100 * count / sum(count)),
-        fill = WHF
-      )) +
+        fill = WHF,
+        text = paste0(
+          "Hospitalisation: ", HOSP, "<br>",
+          "Patient Status: ", WHF
+      ))) +
       geom_bar(position = "dodge", colour = "black") +
       scale_fill_manual(values = c("Healthy"= "lightyellow", "Worsening Heart Failure" = "lightblue"))+
       labs(
@@ -200,6 +210,7 @@ server <- function(input, output) {
         axis.title.y = element_text(face = "bold", size = 12),
         axis.text =  element_text(face = "bold", size = 10)
       )
+    ggplotly(plot_outcomes_whf1, tooltip = "text")
   })
 }
 
