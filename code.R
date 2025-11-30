@@ -24,12 +24,34 @@ ui <- dashboardPage(
     sidebarMenu(
       menuItem("About DIG Study", tabName = "about"),
       menuItem("Baseline Characteristics", tabName = "baseline"),
-      menuItem("Patient Outcomes", tabName = "outcomes")
+      menuItem("Patient Outcomes", tabName = "outcomes"),
+      menuItem("Trial Outcomes", tabName = "trial")
     )
   ),
   dashboardBody(
+    tabItems(
+      tabItem(
+        tabName = "about", 
+        # To be developed
+        # Box: What the trial is about
+        # no of patients in each treatment group
+      ),
+      tabItem(
+        tabName = "baseline"
+        # To be developed
+      ),
+      tabItem(
+        tabName = "trial"
+        # To be developed
+        # Risk of mortality over time
+      ),
+      
       tabItem(
         tabName = "outcomes",
+        # Rate of mortality (treatment groups, WHF, CVD)
+        # Rate of hospitalizations (treatment groups, WHF, CVD)
+        
+        
         fluidRow(
           box(
             title = "Worsening Heart Failure and Patient Status",
