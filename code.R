@@ -2,24 +2,37 @@ library(shiny)
 library(shinydashboard)
 library(tidyverse)
 library(readr)
+library(DT)
 
 dig.df <- read_csv("data/DIG.csv")%>%
   mutate(TRTMT = recode(TRTMT, '0' = "Placebo", `1` = "Treatment"),
          WHF = recode(WHF, '0' = "Healthy", '1'= "Worsening Heart Failure"),
-         HOSP = recode(HOSP, '0' = "No Hospitalisation", '1' = "Hospitalised"))
+         HOSP = recode(HOSP, '0' = "No Hospitalisation", '1' = "Hospitalised"))%>%
+  select(ID, TRTMT, AGE, SEX, BMI, KLEVEL, CREAT, DIABP, SYSBP, HYPERTEN, CVD, WHF, DIG, HOSP, HOSPDAYS, DEATH, DEATHDAY)
 dig.df
 
 trt_choices  <- sort(unique(dig.df$TRTMT))
 whf_choices  <- sort(unique(dig.df$WHF))
 hosp_choices <- sort(unique(dig.df$HOSP))
 
-# To determine if treatment group and WHF have an effect on hospitalizations
 
-ui <- fluidPage(
-  titlePanel("Digitalis Investigation Group (DIG) Trial Analysis"),
+ui <- dashboardPage(
   
-  sidebarLayout(
-    sidebarPanel(
+  dashboardHeader(title = "DIG Trial Analysis"),
+  
+  dashboardSidebar(
+    sidebarMenu(
+      menuItem("About DIG Study", tabName = "about"),
+      menuItem("Baseline Characteristics", tabName = "baseline"),
+      menuItem("Patient Outcomes", tabName = "outcomes")
+    )
+  ),
+  dashboardBody(
+      tabItem(
+        tabName = "outcomes",
+        fluidRow(
+          box(
+            title = "Worsening Heart Failure and Patient Status",
       selectInput(
         inputId  = "TRTMT",
         label    = "Select Treatment Group:",
@@ -39,15 +52,20 @@ ui <- fluidPage(
         choices  = hosp_choices,
         selected = hosp_choices
       )
-    ),
-    
-    mainPanel(
-      plotOutput("plot1"),
-      dataTableOutput("table1")
-    )
-  )
+),
+      box(
+        title = "Hospitalisation by Patient Status",
+        status = "primary", solidHeader = TRUE,
+        width = 8,
+        plotOutput("plot1", height = 300),
+        br(),
+        DTOutput("table1")
+      )
+) 
 )
-
+)
+)
+)
 server <- function(input, output) {
   
   patients_sub <- reactive({
@@ -75,7 +93,7 @@ server <- function(input, output) {
         fill = "Patient Status",
         x    = "Patient Hospitalisation Status",
         y    = "Percentage (%)",
-        title = "Effect of Worsening Heart Failure on Hospitalisation Levels between Groups")+
+        title = "Effect of Worsening Heart Failure on Hospitalisation Levels")+
       theme(
         plot.title = element_text(face = "bold", size = 18),
         axis.title.x = element_text(face = "bold", size = 12),
@@ -84,7 +102,7 @@ server <- function(input, output) {
       )
   })
   
-  output$table1 <- renderDataTable({ 
+  output$table1 <- renderDT({ 
     patients_sub()
   })
 }
