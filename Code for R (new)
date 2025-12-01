@@ -1,0 +1,89 @@
+install.packages(c("shiny", "shinydashboard", "dplyr", "ggplot2", "DT", "scales"))
+
+library(shiny)
+library(shinydashboard)
+library(dplyr)
+library(ggplot2)
+library(DT)
+library(scales)
+
+## ======== 1. 数据读取与预处理 ========
+
+dig_raw <- read.csv("DIG-1.csv")
+
+dig <- dig_raw %>%
+  mutate(
+    treatment   = factor(TRTMT, levels = c(0, 1),
+                         labels = c("Placebo", "Digoxin")),
+    sex         = factor(SEX,  levels = c(1, 2),
+                         labels = c("Male", "Female")),
+    race        = factor(RACE, levels = c(1, 2),
+                         labels = c("White", "Nonwhite")),
+    age         = AGE,
+    bmi         = BMI,
+    ejf_per     = EJF_PER,
+    klevel      = KLEVEL,
+    creatinine  = CREAT,
+    sbp         = SYSBP,
+    dbp         = DIABP,
+    death       = DEATH,
+    deathday    = DEATHDAY,
+    hosp        = HOSP,
+    hospdays    = HOSPDAYS,
+    nhosp       = NHOSP
+  )
+
+validate_data <- function(d) {
+  validate(need(nrow(d) > 0, "当前筛选条件下没有数据，请调整筛选条件。"))
+}
+
+##===========ui=========
+ui <- dashboardPage(
+  dashboardHeader(title = "DIG Trial Explorer"),
+  
+  dashboardSidebar(
+    sidebarMenu(
+      menuItem("About",      tabName = "about",    icon = icon("info-circle")),
+      menuItem("Baseline",   tabName = "baseline", icon = icon("chart-bar")),
+      menuItem("Outcomes",   tabName = "clinical", icon = icon("heartbeat")),
+      ## ===== Tabs 4–6: Xiangqi's modules =====
+      menuItem("Variable explorer", tabName = "relations", icon = icon("project-diagram")),
+      menuItem("Patient browser",   tabName = "patients",  icon = icon("users")),
+      menuItem("Docs",              tabName = "docs",      icon = icon("book"))
+      ## =======================================
+    )
+  ),
+  
+  dashboardBody(
+    tabItems(
+
+
+##==========tab1==========
+tabItem(
+   tabName = "about",
+    fluidRow(
+     box(
+        width = 12, status = "primary", solidHeader = TRUE,
+        title = "DIG Trial Overview",
+        p("The DIG (Digitalis Investigation Group) trial was a randomized, placebo-controlled study evaluating digoxin in patients with heart failure."),
+        p("This dashboard summarises baseline characteristics, treatment differences, and key clinical outcomes, and allows interactive exploration of the DIG dataset.")      
+    )
+),
+fluidRow(
+  valueBoxOutput("vb_total",     width = 4),
+  valueBoxOutput("vb_digoxin",   width = 4),
+  valueBoxOutput("vb_placebo",   width = 4)
+),
+fluidRow(
+  box(
+    width = 6, title="Treament distribution", status="info", solidHeader=TRUE,
+    plotOutput("plot_treat")
+),
+  box(
+   width = 6, title="Sex distribution", status="info", solidHeader=TRUE,
+   plotOutput("plot_sex")
+    )
+  )
+),
+
+##========tab2===========
