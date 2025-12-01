@@ -29,16 +29,14 @@ ui <- dashboardPage(
   dashboardHeader(title = "DIG Trial Analysis"),
   dashboardSidebar(
     sidebarMenu(
-      menuItem("About DIG Study",           tabName = "about"),
-      menuItem("Baseline Characteristics",  tabName = "baseline"),
-      menuItem("Patient Outcomes",          tabName = "outcomes"),
-      menuItem("Trial Outcomes",            tabName = "trial")
+      menuItem("About DIG Study",          tabName = "about"),
+      menuItem("Baseline Characteristics", tabName = "baseline"),
+      menuItem("Patient Outcomes",         tabName = "outcomes"),
+      menuItem("Trial Outcomes",           tabName = "trial")
     )
   ),
   dashboardBody(
     tabItems(
-      
-      # ---------- ABOUT TAB (your enriched tab) ---------- #
       tabItem(
         tabName = "about",
         
@@ -113,34 +111,35 @@ ui <- dashboardPage(
         
         fluidRow(
           box(
-            title = "Next Steps in the App",
-            status = "info",
+            title = "Age Distribution",
+            status = "primary",
             solidHeader = TRUE,
-            width = 12,
-            p("Use the Baseline Characteristics tab to compare clinical measures between digoxin and placebo."),
-            p("Use the Patient Outcomes tab to explore mortality and hospitalisation patterns."),
-            p("Use other tabs (when developed) to explore variables and individual patient records in more detail.")
+            width = 6,
+            plotlyOutput("about_age_hist", height = 300)
+          ),
+          box(
+            title = "Data Summary and Preview",
+            status = "primary",
+            solidHeader = TRUE,
+            width = 6,
+            tabsetPanel(
+              tabPanel("Summary", verbatimTextOutput("about_summary")),
+              tabPanel("Data Preview", DTOutput("about_preview"))
+            )
           )
         )
       ),
-      # ---------------------------------------------------- #
       
       tabItem(
         tabName = "baseline"
-        # To be developed
       ),
       
       tabItem(
         tabName = "trial"
-        # To be developed
-        # Risk of mortality over time
       ),
       
       tabItem(
         tabName = "outcomes",
-        
-        # Rate of mortality (treatment groups, WHF, CVD)
-        # Rate of hospitalizations (treatment groups, WHF, CVD)
         
         fluidRow(
           box(
@@ -153,7 +152,6 @@ Use the filters to explore the rate of mortality and hospitalisations between gr
           )
         ),
         
-        # Rate of mortality between groups
         fluidRow(
           box(
             title = "Filter Box - Rate of Mortality between Groups",
@@ -182,7 +180,6 @@ Use the filters to explore the rate of mortality and hospitalisations between gr
           )
         ),
         
-        # Worsening heart failure
         fluidRow(
           box(
             title = "Filter Box - Worsening Heart Failure and Hospitalisation Status",
@@ -216,13 +213,11 @@ Use the filters to explore the rate of mortality and hospitalisations between gr
           )
         )
       )
-    ) # end tabItems
-  )   # end dashboardBody
-)     # end dashboardPage
+    )
+  )
+)
 
 server <- function(input, output) {
-  
-  # -------- ABOUT TAB: your outputs -------- #
   
   output$vb_total_patients <- renderValueBox({
     valueBox(
@@ -299,9 +294,22 @@ server <- function(input, output) {
       )
   })
   
-  # -------- PARTNERS’ OUTCOMES CODE (logic unchanged) -------- #
+  output$about_age_hist <- renderPlotly({
+    plt <- ggplot(dig.df, aes(x = AGE)) +
+      geom_histogram(binwidth = 5, fill = "steelblue", colour = "white") +
+      labs(x = "Age (years)", y = "Count", title = "Age Distribution of Patients") +
+      theme_minimal()
+    ggplotly(plt)
+  })
   
-  # Patient outcomes: Rate of mortality between groups
+  output$about_summary <- renderPrint({
+    summary(select_if(dig.df, is.numeric))
+  })
+  
+  output$about_preview <- renderDT({
+    head(dig.df, 20)
+  })
+  
   mortality_sub <- reactive({
     req(input$TRTMT, input$DEATH)
     dig.df %>%
@@ -325,7 +333,8 @@ server <- function(input, output) {
         )
       )) +
       geom_bar(position = "dodge", colour = "black") +
-      scale_fill_manual(values = c("Alive" = "lightyellow", "Deceased" = "darkblue")) +
+      scale_fill_manual(values = c("Alive" = "lightyellow",
+                                   "Deceased" = "darkblue")) +
       labs(
         fill = "Patient Status",
         x    = "Patient Mortality Status",
@@ -345,7 +354,6 @@ server <- function(input, output) {
     mortality_sub()
   })
   
-  # Patient outcomes: rate of hospitalisations and WHF between groups
   patients_sub <- reactive({
     req(input$TRTMT_whf, input$WHF, input$HOSP)
     dig.df %>%
@@ -389,3 +397,4 @@ server <- function(input, output) {
 }
 
 shinyApp(ui, server)
+
