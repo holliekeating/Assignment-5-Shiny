@@ -88,7 +88,9 @@ tabItem(
       
 
 ## ======== Tab 2: Baseline Characteristics (Manasvi) ======
-      tabItem(
+      
+
+tabItem(
         tabName = "baseline",
         fluidRow(
           box(
@@ -108,7 +110,8 @@ tabItem(
               selected = levels(dig$treatment)
             )
           ),
-          box(
+          
+box(
             width = 9, status = "primary", solidHeader = TRUE,
             title = "Baseline characteristics by treatment",
             tabsetPanel(
@@ -128,7 +131,7 @@ tabItem(
                                          "Diastolic BP" = "dbp")
                            )
                          ),
-                         column(
+                        column(
                            6,
                            radioButtons("b_plot_type", "Plot type",
                                         choices = c("Histogram" = "hist",
@@ -136,6 +139,7 @@ tabItem(
                                         inline = TRUE)
                          )
                        ),
+
                        plotOutput("plot_baseline")
               )
             )
@@ -143,7 +147,40 @@ tabItem(
         )
       ),
 
-##=========tab3=========
+##=========Tab3: Clinical Outcomes (Hollie)=========
+tabItem(
+   tabName = "clinical",
+   fluidRow(
+     box(
+        width =3, status = "primary", solidHeader = TRUE,
+        title = "Filters",
+        selectInput("c_sex", "Sex",
+                    choices = c("All", levels(dig$sex))),
+        sliderInput("c_age", "Age range",
+                    min = floor(min(dig$age, na.rm = TRUE)),
+                    max = ceiling(max(dig$age, na.rm = TRUE)),
+                    value = c(40,80), step = 1),
+        selectInput("c_ef", "EF category",
+                    choices = c("All", "Low EF", "Mid-range EF", "Preserved EF"))
+),
+box(
+   width = 9, status = "primany", solidHeader =TRUE, 
+   title = "Clinical outcomes",
+   tabsetPanel(
+    tabPanel("Mortality by treatment",
+             DTOutput("tbl_mort"),
+             plotOutput("plot_mort")),
+    tabPanel("Hospitalisation",
+             DTOutput("tbl_hosp"),
+             plotOutput("plot_hosp")),
+    tabPanel("Days to death (histogram)",
+             plotOutput("plot_deathday"))
+       )
+     )
+   )
+),
+
+##========== Tab: Variable explorer (Xiangqi)=======
 
 
 
