@@ -10,7 +10,7 @@ library(ggplot2)
 library(DT)
 library(scales)
 
-## ---------- 1. Data import & preprocessing -----------------------------
+## ===== 1. Data import and preprocessing =====
 dig_raw <- read.csv("data/DIG.csv")
 
 dig <- dig_raw %>%
@@ -39,7 +39,7 @@ validate_data <- function(d) {
   validate(need(nrow(d) > 0))
 }
 
-## ---------- 2. UI ------------------------------------------------------
+## ===== 2. UI =====
 
 ui <- dashboardPage(
   dashboardHeader(title = "DIG Trial Explorer"),
@@ -415,7 +415,56 @@ server <- function(input, output, session) {
 
 ##====tab2(manasvi)====
 
+b_data <- reactive({
+    d <- dig
+    if (input$b_sex != "All") d <- d %>% filter(sex == input$b_sex)
+    if (input$b_race != "All") d <- d %>% filter(race == input$b_race)
+    d <- d %>% filter(age >= input$b_age[1], age <= input$b_age[2])
+    d <- d %>% filter(treatment %in% input$b_trt)
+    d
+  })
+  
+  
 
+output$tbl_baseline <- renderDT({
+    d <- b_data()
+    validate_data(d)
+    summary_df <- d %>%
+      group_by(treatment) %>%
+      summarise(
+        n         = n(),
+        mean_age  = mean(age, na.rm = TRUE),
+        mean_bmi  = mean(bmi, na.rm = TRUE),
+        mean_ef   = mean(ejf_per, na.rm = TRUE),
+        mean_k    = mean(klevel, na.rm = TRUE),
+        mean_cre  = mean(creatinine, na.rm = TRUE),
+        mean_sbp  = mean(sbp, na.rm = TRUE),
+        mean_dbp  = mean(dbp, na.rm = TRUE),
+        .groups   = "drop"
+      )
+    datatable(summary_df, rownames = FALSE, options = list(pageLength = 5))
+  })
+  
+  
+
+output$plot_baseline <- renderPlot({
+    d <- b_data()
+    validate_data(d)
+    var <- input$b_var
+    if (input$b_plot_type == "hist") {
+      ggplot(d, aes_string(x = var, fill = "treatment")) +
+        geom_histogram(alpha = 0.6, position = "identity") +
+        labs(x = var, y = "Count",
+             title = paste("Histogram of", var, "by treatment"))
+    } else {
+      ggplot(d, aes_string(x = "treatment", y = var, fill = "treatment")) +
+        geom_boxplot(alpha = 0.7) +
+        labs(x = "Treatment", y = var,
+             title = paste("Boxplot of", var, "by treatment"))
+    }
+  })
+
+##=====tab 3 (Hollie)======
 
 
 
