@@ -387,6 +387,33 @@ tabItem(
 
 
 ##========== 3. Server=========
+server <- function(input, output, session) {
+  
+  ## ===tab 1: About (Manasvi) ======
+  output$vb_total <- renderValueBox({
+    valueBox(nrow(dig), "Total patients", icon = icon("users"), color = "teal")
+  })
+  output$vb_digoxin <- renderValueBox({
+    valueBox(sum(dig$treatment=="Digoxin"), "Digoxin group", icon = icon("capsules"), color = "blue")
+  })
+  output$vb_placebo <- renderValueBox({
+    valueBox(sum(dig$treatment=="Placebo"), "Placebo group", icon = icon("prescription-bottle"), color = "purple")
+  })
+  output$plot_treat <- renderPlot({
+    ggplot(dig, aes(x = treatment)) + geom_bar() +
+      labs(x = "Treatment", y = "Count", title = "Treatment distribution")
+  })
+  output$plot_sex <- renderPlot({
+    tab <- dig %>% count(sex) %>% mutate(prop = n/sum(n))
+    ggplot(tab, aes(x = "", y = prop, fill = sex)) +
+      geom_col(width = 1) +
+      coord_polar("y") +
+      theme_void() +
+      labs(title = "Sex distribution") +
+      scale_y_continuous(labels = percent_format(accuracy = 1))
+  })
+
+##====tab2(manasvi)====
 
 
 
