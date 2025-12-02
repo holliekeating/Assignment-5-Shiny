@@ -163,17 +163,18 @@ tabItem(
         selectInput("c_ef", "EF category",
                     choices = c("All", "Low EF", "Mid-range EF", "Preserved EF"))
 ),
-box(
-   width = 9, status = "primany", solidHeader =TRUE, 
-   title = "Clinical outcomes",
-   tabsetPanel(
-    tabPanel("Mortality by treatment",
+     
+    box(
+        width = 9, status = "primany", solidHeader =TRUE, 
+        title = "Clinical outcomes",
+        tabsetPanel(
+          tabPanel("Mortality by treatment",
              DTOutput("tbl_mort"),
              plotOutput("plot_mort")),
-    tabPanel("Hospitalisation",
+          tabPanel("Hospitalisation",
              DTOutput("tbl_hosp"),
              plotOutput("plot_hosp")),
-    tabPanel("Days to death (histogram)",
+          tabPanel("Days to death (histogram)",
              plotOutput("plot_deathday"))
        )
      )
@@ -182,8 +183,64 @@ box(
 
 ##========== Tab: Variable explorer (Xiangqi)=======
 
+tabItem(
+ tabName = "relations",
+ fluidRow(
+    box(
+       width = 3, status = "primary', solidHeader = TRUE,
+       title = "Controls"
 
+    selectInput(
+      inputId = "r_x",
+      label   = "X variable",
+      choices = c("Age"         = "age",
+                  "BMI"         = "bmi",
+                  "Ejection fraction"    = "ejf_per",
+                  "Potassium"   = "klevel",
+                  "Creatinine"  = "creatinine",
+                  "Systolic BP" = "sbp",
+                  "Diastolic BP" = "dbp")
+),
 
+selectInput(
+    inputId = "r_y",
+    label   = "Y variable",
+    choices = c("Ejection fraction" = "ejf_per",
+                "BMI"               = "bmi",
+                "Potassium"         = "klevel",
+                "Creatinine"        = "creatinine",
+                "Systolic BP"       = "sbp"
+                "Diastolic BP"      = "dbp")
+),
+
+selectInput(
+    inputId = "r_col",
+    label   = "Colour / Group by",
+    choices = c("None"      = "none"
+                "Treatment" = "treatment"
+                "Sex"       = "sex"
+                "Race"      = "race")
+),
+
+checkboxInput(
+ inputId = "r_smooth",
+ label   = "Add linear trend line",
+ value   = TRUE
+   )
+),
+
+box(
+ width = 9, status = "primary", solidHeader = TRUE,
+ title = "Scatterplot & Correlation",
+ plotOutput("plot_rel"),
+ br(),
+ strong("Pearson corelation: "),
+ textOutput("txt_cor")
+   )
+  )
+),
+
+##========= tab5:Patinet explorer (Xiangqi) ========
 
 
 
