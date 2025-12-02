@@ -292,9 +292,101 @@ tabItem(
       ),
 
 ##========tab 6:Documentation and Help (Xiangqi)=======
+tabItem(
+  tabName = "docs",
+  fluidRow(
+     box(
+       width = 12, status = "primary", solidHeader = TRUE,
+       title = "Documenttation and Help",
+
+       h3("Purpose"),
+       p("This Shiny dashboard provides an interactive overview of the DIG trial dataset,"),
+       p("focusing on baseline characteristics, treatment differences, clinical outcomes,"),
+       p("and relationships between key clinical variables."),
+
+       
+       h3("Tab overview"),
+       tags$ul(
+          
+          tags$li(strong("Tab 1 – About:"), " overall description of the DIG study and high-level summaries."),
+          tags$li(strong("Tab 2 – Baseline characteristics:"), 
+                      " summary statistics and visualisations of baseline variables by treatment."),
+          tags$li(strong("Tab 3 – Clinical outcomes:"), 
+                      " mortality and hospitalisation summaries with dynamic filters."),
+          tags$li(strong("Tab 4 – Variable explorer:"), 
+                      " interactive scatterplots with X/Y variable selection, grouping and correlation."),
+          tags$li(strong("Tab 5 – Patient explorer:"), 
+                      " patient-level table with filters for age, sex, treatment and status."),
+          tags$li(strong("Tab 6 – Documentation & help:"), 
+                      " explanation of the app, workflow and team contributions.")
+            ),
+
+       
+       h3("Team contributions"),
+        tags$ul(
+              
+              tags$li(
+                tags$b("Manasvi — Technical structure and baseline analysis: "),
+                "set up the overall Shiny project structure and created the core layout for the app. ",
+                "Implemented Tab 1 (About) and Tab 2 (Baseline characteristics), prepared baseline summary statistics ",
+                "and visualisations (age, BMI, ejection fraction, sex). ",
+                "Helped keep the UI clean and organised, structured the GitHub repository, ",
+                "and contributed to parts of the written documentation."
+              ),
+              
+              tags$li(
+                tags$b("Hollie — Outcomes and deployment: "),
+                "implemented Tab 3 (Clinical outcomes), including mortality plots, hospitalisation summaries ",
+                "and outcome tables with dynamic filters for age, sex and EF category. ",
+                "Deployed the final app to shinyapps.io and managed GitHub settings such as branch protection ",
+                "and quality assurance checks. Wrote the explanatory text for the outcomes tab."
+              ),
+              
+              tags$li(
+                tags$b("Xiangqi Xu — Interactive exploration and patient filtering: "),
+                "implemented Tab 4 (Variable explorer) and Tab 5 (Patient explorer), ",
+                "including UI controls for X and Y variable selection, colour/grouping options, ",
+                "and filters for age, sex and treatment. Built the reactive patient-level data table, ",
+                "added Pearson correlation calculations for selected variables, ",
+                "and wrote this documentation/help tab (Tab 6)."
+              )
+            ),
+
+       
+      h3("Why these roles fit each member"),
+       tags$ul(
+              
+              tags$li(
+                tags$b("Manasvi: "),
+                "already had a strong understanding of the DIG dataset from Assignment 4 and had developed ",
+                "baseline analyses before, which made them well suited to setting up the technical structure ",
+                "and leading the baseline tabs."
+              ),
+              
+              tags$li(
+                tags$b("Hollie: "),
+                "owns and manages the main GitHub repository and is comfortable with deployment workflows, ",
+                "so taking responsibility for the outcomes tab and deploying the final app to shinyapps.io ",
+                "was a natural fit."
+              ),
+              
+              tags$li(
+                tags$b("Xiangqi: "),
+                "enjoys working with controlled user interface elements and reactive behaviour that can be built ",
+                "step by step. Tabs 4 and 5 require careful UI design and incremental testing, making them ",
+                "well matched to Xiangqi's strengths in interactive Shiny development."
+              )
+            )
+          )
+        )
+      )
+    )
+  )
+)
 
 
 
+##========== 3. Server=========
 
 
 
