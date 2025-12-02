@@ -241,6 +241,57 @@ box(
 ),
 
 ##========= tab5:Patinet explorer (Xiangqi) ========
+tabItem(
+  tabName = "patients",
+  fluidRow(
+     bow(
+       width = 3, status = primary", solideHeader = TRUE,
+       title = "Filters"
+
+       selectInput(
+              inputId = "p_trt",
+              label   = "Treatment",
+              choices = c("All", levels(dig$treatment))
+            ),
+            
+
+       selectInput(
+              inputId = "p_sex",
+              label   = "Sex",
+              choices = c("All", levels(dig$sex))
+            ),
+           
+
+       sliderInput(
+              inputId = "p_age",
+              label   = "Age range",
+              min     = floor(min(dig$age, na.rm = TRUE)),
+              max     = ceiling(max(dig$age, na.rm = TRUE)),
+              value   = c(40, 80),
+              step    = 1
+            ),
+           
+
+      selectInput(
+              inputId = "p_status",
+              label   = "Status",
+              choices = c("All",
+                          "Died",
+                          "Alive",
+                          "Hospitalized",
+                          "Never hospitalized")
+            )
+          ),
+          
+       box(
+            width = 9, status = "primary", solidHeader = TRUE,
+            title = "Patient-level data",
+            DTOutput("tbl_patients")
+          )
+        )
+      ),
+
+##========tab 6:Documentation and Help (Xiangqi)=======
 
 
 
