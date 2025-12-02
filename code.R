@@ -63,15 +63,27 @@ ui <- dashboardPage(
             solidHeader = TRUE,
             p("This section explores patient outcomes in the Digitalis Investigation Group (DIG) Trial. 
               Use the filters to explore the rate of mortality and hospitalisations between groups")
-          ),
+          )
+        ),
+      
+      br(),
+      
+      fluidRow(
+        valueBoxOutput("mortality_vb", width = 3),
+        valueBoxOutput("mortality_placebo_vb", width = 3),
+        valueBoxOutput("mortality_treatment_vb", width = 3)
+      ),
+      
+      br(),
           
 # Rate of mortality between groups
-      box(
+      fluidRow(
+        box(
         title = "Filter Box - Rate of Mortality between Groups",
         status = "primary", solidHeader = TRUE,
         width = 4,
         selectInput(
-          inputId  = "TRTMT",
+          inputId  = "TRTMT_mortality",
           label    = "Select Treatment Group:",
           choices  = trt_choices,
           selected = trt_choices, 
@@ -99,7 +111,7 @@ ui <- dashboardPage(
         status = "primary", solidHeader = TRUE,
         width = 4,
       selectInput(
-        inputId  = "TRTMT",
+        inputId  = "TRTMT_whf",
         label    = "Select Treatment Group:",
         choices  = trt_choices,
         selected = trt_choices, 
@@ -134,13 +146,41 @@ server <- function(input, output) {
 
 # Patient outcomes: Rate of mortality between groups
   
+  output$mortality_vb <- renderValueBox({
+    valueBox(
+      value    = sum(dig.df$DEATH == "Deceased", na.rm = TRUE),
+      subtitle = "Total Deaths",
+      icon     = icon("users"),
+      color    = "blue"
+    )
+  })
+  
+  output$mortality_placebo_vb <- renderValueBox({
+    valueBox(
+      value    = sum(dig.df$TRTMT == "Placebo" & dig.df$DEATH == "Deceased", na.rm = TRUE),
+      subtitle = "Mortality Rate in Placebo Group",
+      icon     = icon("capsules"),
+      color    = "green"
+    )
+  })
+  
+  output$mortality_treatment_vb <- renderValueBox({
+    valueBox(
+      value    = sum(dig.df$TRTMT == "Treatment" & dig.df$DEATH == "Deceased", na.rm = TRUE),
+      subtitle = "Mortality Rate in Treatment Group",
+      icon     = icon("capsules"),
+      color    = "yellow"
+    )
+  })
+  
   mortality_sub <- reactive({
-    req(input$TRTMT, input$DEATH)
+    req(input$TRTMT_mortality, input$DEATH)
     
     dig.df %>%
-      filter(TRTMT %in% input$TRTMT) %>%
+      filter(TRTMT %in% input$TRTMT_mortality) %>%
       filter(DEATH   %in% input$DEATH)
   })
+  
   output$plot_outcomes_mortality <- renderPlotly({ 
     dat <- mortality_sub()
     req(nrow(dat) > 0)  
@@ -170,17 +210,13 @@ server <- function(input, output) {
     ggplotly(plot_outcomes_mortality1, tooltip = "text")
   })
   
-  output$table_outcomes_mortality <- renderDT({ 
-    mortality_sub()
-  })
-  
 
 # Patient outcomes: rate of hospitalisations and WHF between groups   
   patients_sub <- reactive({
-    req(input$TRTMT, input$WHF, input$HOSP)
+    req(input$TRTMT_whf, input$WHF, input$HOSP)
     
     dig.df %>%
-      filter(TRTMT %in% input$TRTMT) %>%
+      filter(TRTMT %in% input$TRTMT_whf) %>%
       filter(WHF   %in% input$WHF)   %>%
       filter(HOSP  %in% input$HOSP)
   })
