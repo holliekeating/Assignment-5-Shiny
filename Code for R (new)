@@ -148,6 +148,8 @@ box(
       ),
 
 ##=========Tab3: Clinical Outcomes (Hollie)=========
+
+
 tabItem(
    tabName = "clinical",
    fluidRow(
@@ -181,7 +183,9 @@ tabItem(
    )
 ),
 
-##========== Tab: Variable explorer (Xiangqi)=======
+
+##========== Tab4: Variable explorer (Xiangqi)=======
+
 
 tabItem(
  tabName = "relations",
@@ -241,6 +245,8 @@ box(
 ),
 
 ##========= tab5:Patinet explorer (Xiangqi) ========
+
+
 tabItem(
   tabName = "patients",
   fluidRow(
@@ -292,6 +298,8 @@ tabItem(
       ),
 
 ##========tab 6:Documentation and Help (Xiangqi)=======
+
+
 tabItem(
   tabName = "docs",
   fluidRow(
@@ -387,6 +395,8 @@ tabItem(
 
 
 ##========== 3. Server=========
+
+
 server <- function(input, output, session) {
   
   ## ===tab 1: About (Manasvi) ======
