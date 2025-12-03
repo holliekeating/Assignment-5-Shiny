@@ -92,6 +92,35 @@ ui <- dashboardPage(
         
         fluidRow(
           box(
+            title = "Filters for Treatment Group Distribution",
+            status = "primary",
+            solidHeader = TRUE,
+            width = 6,
+            checkboxGroupInput(
+              "about_trtplot_sex",
+              "Select sex group(s):",
+              choices  = sort(unique(dig.df$SEX)),
+              selected = sort(unique(dig.df$SEX))
+            )
+          ),
+          box(
+            title = "Filters for Sex Distribution",
+            status = "primary",
+            solidHeader = TRUE,
+            width = 6,
+            checkboxGroupInput(
+              "about_sexplot_trt",
+              "Select treatment group(s):",
+              choices  = trt_choices,
+              selected = trt_choices
+            )
+          )
+        ),
+        
+        br(),
+        
+        fluidRow(
+          box(
             title = "Treatment Group Distribution",
             status = "primary",
             solidHeader = TRUE,
@@ -127,16 +156,30 @@ ui <- dashboardPage(
               tabPanel("Data Preview", DTOutput("about_preview"))
             )
           )
+        ),
+        
+        br(),
+        
+        fluidRow(
+          box(
+            title = "Age Distribution by Treatment",
+            status = "primary",
+            solidHeader = TRUE,
+            width = 6,
+            plotlyOutput("about_age_boxplot", height = 300)
+          ),
+          box(
+            title = "BMI Distribution by Treatment",
+            status = "primary",
+            solidHeader = TRUE,
+            width = 6,
+            plotlyOutput("about_bmi_boxplot", height = 300)
+          )
         )
       ),
       
-      tabItem(
-        tabName = "baseline"
-      ),
-      
-      tabItem(
-        tabName = "trial"
-      ),
+      tabItem(tabName = "baseline"),
+      tabItem(tabName = "trial"),
       
       tabItem(
         tabName = "outcomes",
@@ -219,6 +262,22 @@ Use the filters to explore the rate of mortality and hospitalisations between gr
 
 server <- function(input, output) {
   
+  about_trtplot_data <- reactive({
+    dat <- dig.df
+    if (!is.null(input$about_trtplot_sex) && length(input$about_trtplot_sex) > 0) {
+      dat <- dat %>% filter(SEX %in% input$about_trtplot_sex)
+    }
+    dat
+  })
+  
+  about_sexplot_data <- reactive({
+    dat <- dig.df
+    if (!is.null(input$about_sexplot_trt) && length(input$about_sexplot_trt) > 0) {
+      dat <- dat %>% filter(TRTMT %in% input$about_sexplot_trt)
+    }
+    dat
+  })
+  
   output$vb_total_patients <- renderValueBox({
     valueBox(
       value    = nrow(dig.df),
@@ -256,30 +315,54 @@ server <- function(input, output) {
   })
   
   output$about_treatment_plot <- renderPlotly({
-    plt <- dig.df %>%
+    dat <- about_trtplot_data()
+    req(nrow(dat) > 0)
+    
+    plt <- dat %>%
       count(TRTMT) %>%
       ggplot(aes(
         x    = TRTMT,
         y    = n,
+        fill = TRTMT,
         text = paste0("Group: ", TRTMT, "<br>Patients: ", n)
       )) +
-      geom_col(fill = "steelblue") +
-      labs(x = "Treatment Group", y = "Number of Patients") +
+      geom_col(colour = "black") +
+      scale_fill_manual(
+        values = c("Placebo" = "darkblue", "Treatment" = "lightblue")
+      ) +
+      labs(x = "Treatment Group", y = "Number of Patients", fill = "Treatment") +
       theme_minimal()
+    
     ggplotly(plt, tooltip = "text")
   })
   
   output$about_sex_plot <- renderPlotly({
-    plt <- dig.df %>%
+    dat <- about_sexplot_data()
+    req(nrow(dat) > 0)
+    
+    plt <- dat %>%
       count(SEX) %>%
       ggplot(aes(
-        x    = SEX,
+        x    = as.factor(SEX),
         y    = n,
-        text = paste0("Sex: ", SEX, "<br>Patients: ", n)
+        fill = as.factor(SEX),
+        text = paste0(
+          "Sex code: ", SEX,
+          ifelse(SEX == 1, " (Male)", " (Female)"),
+          "<br>Patients: ", n
+        )
       )) +
-      geom_col(fill = "darkorange") +
-      labs(x = "Sex", y = "Number of Patients") +
+      geom_col(colour = "black") +
+      scale_x_discrete(
+        labels = c("1" = "1 = Male", "2" = "2 = Female")
+      ) +
+      scale_fill_manual(
+        values = c("1" = "lightblue", "2" = "pink"),
+        labels = c("1" = "Male", "2" = "Female")
+      ) +
+      labs(x = "Sex", y = "Number of Patients", fill = "Sex") +
       theme_minimal()
+    
     ggplotly(plt, tooltip = "text")
   })
   
@@ -288,8 +371,12 @@ server <- function(input, output) {
       group_by(TRTMT) %>%
       summarise(
         n        = n(),
-        mean_age = round(mean(AGE, na.rm = TRUE), 1),
-        mean_bmi = round(mean(BMI, na.rm = TRUE), 1),
+        mean_age = round(mean(AGE, na.rm = TRUE), 2),
+        sd_age   = round(sd(AGE, na.rm = TRUE), 2),
+        mean_bmi = round(mean(BMI, na.rm = TRUE), 2),
+        sd_bmi   = round(sd(BMI, na.rm = TRUE), 2),
+        male_n   = sum(SEX == 1, na.rm = TRUE),
+        female_n = sum(SEX == 2, na.rm = TRUE),
         .groups  = "drop"
       )
   })
@@ -308,6 +395,26 @@ server <- function(input, output) {
   
   output$about_preview <- renderDT({
     head(dig.df, 20)
+  })
+  
+  output$about_age_boxplot <- renderPlotly({
+    p <- ggplot(dig.df, aes(x = TRTMT, y = AGE, fill = TRTMT)) +
+      geom_boxplot(color = "black") +
+      scale_fill_manual(values = c("Placebo" = "blue", "Treatment" = "green")) +
+      labs(x = "Treatment Group", y = "Age (years)") +
+      theme_minimal() +
+      theme(legend.position = "none")
+    ggplotly(p)
+  })
+  
+  output$about_bmi_boxplot <- renderPlotly({
+    p <- ggplot(dig.df, aes(x = TRTMT, y = BMI, fill = TRTMT)) +
+      geom_boxplot(color = "black") +
+      scale_fill_manual(values = c("Placebo" = "orange", "Treatment" = "purple")) +
+      labs(x = "Treatment Group", y = "BMI") +
+      theme_minimal() +
+      theme(legend.position = "none")
+    ggplotly(p)
   })
   
   mortality_sub <- reactive({
@@ -397,4 +504,3 @@ server <- function(input, output) {
 }
 
 shinyApp(ui, server)
-
