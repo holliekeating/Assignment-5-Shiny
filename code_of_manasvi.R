@@ -37,9 +37,9 @@ ui <- dashboardPage(
   ),
   dashboardBody(
     tabItems(
+      # ---------------- TAB 1: ABOUT ----------------
       tabItem(
         tabName = "about",
-        
         fluidRow(
           box(
             title = "About the DIG Study",
@@ -49,18 +49,14 @@ ui <- dashboardPage(
             p("The Digitalis Investigation Group (DIG) trial evaluated the effect of digoxin compared with placebo in patients with heart failure. This tab summarises the study purpose, treatment groups, and basic features of the analysis dataset.")
           )
         ),
-        
         br(),
-        
         fluidRow(
           valueBoxOutput("vb_total_patients", width = 3),
           valueBoxOutput("vb_digoxin",        width = 3),
           valueBoxOutput("vb_placebo",        width = 3),
           valueBoxOutput("vb_avg_age",        width = 3)
         ),
-        
         br(),
-        
         fluidRow(
           box(
             title = "Dataset Information",
@@ -75,9 +71,7 @@ ui <- dashboardPage(
             p("Variables include demographics (age, sex), clinical measurements (BMI, blood pressure, creatinine, potassium), comorbidities (hypertension, cardiovascular disease), and outcomes (worsening heart failure, hospitalisation, death).")
           )
         ),
-        
         br(),
-        
         fluidRow(
           box(
             title = "Key Baseline Characteristics by Treatment",
@@ -87,9 +81,7 @@ ui <- dashboardPage(
             DTOutput("about_baseline_table")
           )
         ),
-        
         br(),
-        
         fluidRow(
           box(
             title = "Filters for Treatment Group Distribution",
@@ -116,9 +108,7 @@ ui <- dashboardPage(
             )
           )
         ),
-        
         br(),
-        
         fluidRow(
           box(
             title = "Treatment Group Distribution",
@@ -135,9 +125,7 @@ ui <- dashboardPage(
             plotlyOutput("about_sex_plot", height = 300)
           )
         ),
-        
         br(),
-        
         fluidRow(
           box(
             title = "Age Distribution",
@@ -157,9 +145,7 @@ ui <- dashboardPage(
             )
           )
         ),
-        
         br(),
-        
         fluidRow(
           box(
             title = "Age Distribution by Treatment",
@@ -178,9 +164,79 @@ ui <- dashboardPage(
         )
       ),
       
-      tabItem(tabName = "baseline"),
+      # ---------------- TAB 2: BASELINE ----------------
+      tabItem(
+        tabName = "baseline",
+        fluidRow(
+          box(
+            title = "Baseline Characteristics",
+            status = "primary",
+            solidHeader = TRUE,
+            width = 12,
+            p("Use the filters to explore baseline age and BMI distributions by treatment and sex.")
+          )
+        ),
+        br(),
+        fluidRow(
+          box(
+            title = "Filters",
+            status = "primary",
+            solidHeader = TRUE,
+            width = 4,
+            checkboxGroupInput(
+              "base_trt",
+              "Treatment group:",
+              choices  = trt_choices,
+              selected = trt_choices
+            ),
+            checkboxGroupInput(
+              "base_sex",
+              "Sex (code):",
+              choices  = sort(unique(dig.df$SEX)),
+              selected = sort(unique(dig.df$SEX))
+            ),
+            sliderInput(
+              "base_age",
+              "Age range:",
+              min   = floor(min(dig.df$AGE, na.rm = TRUE)),
+              max   = ceiling(max(dig.df$AGE, na.rm = TRUE)),
+              value = c(
+                floor(min(dig.df$AGE, na.rm = TRUE)),
+                ceiling(max(dig.df$AGE, na.rm = TRUE))
+              )
+            )
+          ),
+          box(
+            title = "Age Histogram",
+            status = "primary",
+            solidHeader = TRUE,
+            width = 8,
+            plotlyOutput("base_age_hist", height = 300)
+          )
+        ),
+        br(),
+        fluidRow(
+          box(
+            title = "BMI by Treatment",
+            status = "primary",
+            solidHeader = TRUE,
+            width = 8,
+            plotlyOutput("base_bmi_box", height = 300)
+          ),
+          box(
+            title = "Interpretation",
+            status = "primary",
+            solidHeader = TRUE,
+            width = 4,
+            htmlOutput("base_text")
+          )
+        )
+      ),
+      
+      # ---------------- TAB 3: TRIAL (empty) ----------------
       tabItem(tabName = "trial"),
       
+      # ---------------- TAB 4: OUTCOMES ----------------
       tabItem(
         tabName = "outcomes",
         
@@ -190,18 +246,24 @@ ui <- dashboardPage(
             status = "primary",
             width = 10,
             solidHeader = TRUE,
-            p("This section explores patient outcomes in the Digitalis Investigation Group (DIG) Trial.
-Use the filters to explore the rate of mortality and hospitalisations between groups")
+            p("This section explores patient outcomes in the Digitalis Investigation Group (DIG) Trial. 
+              Use the filters to explore the rate of mortality and hospitalisations between groups")
           )
         ),
-        
+        br(),
+        fluidRow(
+          valueBoxOutput("mortality_vb",           width = 3),
+          valueBoxOutput("mortality_placebo_vb",   width = 3),
+          valueBoxOutput("mortality_treatment_vb", width = 3)
+        ),
+        br(),
         fluidRow(
           box(
             title = "Filter Box - Rate of Mortality between Groups",
             status = "primary", solidHeader = TRUE,
             width = 4,
             selectInput(
-              inputId  = "TRTMT",
+              inputId  = "TRTMT_mortality",
               label    = "Select Treatment Group:",
               choices  = trt_choices,
               selected = trt_choices,
@@ -222,7 +284,7 @@ Use the filters to explore the rate of mortality and hospitalisations between gr
             br()
           )
         ),
-        
+        br(),
         fluidRow(
           box(
             title = "Filter Box - Worsening Heart Failure and Hospitalisation Status",
@@ -250,7 +312,8 @@ Use the filters to explore the rate of mortality and hospitalisations between gr
           ),
           box(
             title = "Worsening Heart Failure and Hospitalisation Status",
-            status = "primary", solidHeader = TRUE,
+            status = "primary",
+            solidHeader = TRUE,
             width = 6,
             plotlyOutput("plot_outcomes_whf", height = 500)
           )
@@ -261,21 +324,17 @@ Use the filters to explore the rate of mortality and hospitalisations between gr
 )
 
 server <- function(input, output) {
-  
+  # ------------ ABOUT TAB ------------
   about_trtplot_data <- reactive({
-    dat <- dig.df
-    if (!is.null(input$about_trtplot_sex) && length(input$about_trtplot_sex) > 0) {
-      dat <- dat %>% filter(SEX %in% input$about_trtplot_sex)
-    }
-    dat
+    req(input$about_trtplot_sex)      # no selection -> no plot
+    dig.df %>%
+      filter(SEX %in% input$about_trtplot_sex)
   })
   
   about_sexplot_data <- reactive({
-    dat <- dig.df
-    if (!is.null(input$about_sexplot_trt) && length(input$about_sexplot_trt) > 0) {
-      dat <- dat %>% filter(TRTMT %in% input$about_sexplot_trt)
-    }
-    dat
+    req(input$about_sexplot_trt)
+    dig.df %>%
+      filter(TRTMT %in% input$about_sexplot_trt)
   })
   
   output$vb_total_patients <- renderValueBox({
@@ -417,10 +476,119 @@ server <- function(input, output) {
     ggplotly(p)
   })
   
+  # ------------ BASELINE TAB ------------
+  base_data <- reactive({
+    dat <- dig.df
+    if (!is.null(input$base_trt) && length(input$base_trt) > 0) {
+      dat <- dat %>% filter(TRTMT %in% input$base_trt)
+    }
+    if (!is.null(input$base_sex) && length(input$base_sex) > 0) {
+      dat <- dat %>% filter(SEX %in% input$base_sex)
+    }
+    dat <- dat %>%
+      filter(AGE >= input$base_age[1],
+             AGE <= input$base_age[2])
+    dat
+  })
+  
+  output$base_age_hist <- renderPlotly({
+    dat <- base_data()
+    req(nrow(dat) > 0)
+    
+    p <- ggplot(dat, aes(x = AGE, fill = TRTMT)) +
+      geom_histogram(binwidth = 5, colour = "black", alpha = 0.7, position = "identity") +
+      scale_fill_manual(values = c("Placebo" = "darkblue", "Treatment" = "lightblue")) +
+      labs(
+        x = "Age (years)",
+        y = "Number of patients",
+        fill = "Treatment"
+      ) +
+      theme_minimal()
+    
+    ggplotly(p)
+  })
+  
+  output$base_bmi_box <- renderPlotly({
+    dat <- base_data()
+    req(nrow(dat) > 0)
+    
+    p <- ggplot(dat, aes(x = TRTMT, y = BMI, fill = TRTMT)) +
+      geom_boxplot(colour = "black") +
+      scale_fill_manual(values = c("Placebo" = "darkblue", "Treatment" = "lightblue")) +
+      labs(
+        x = "Treatment group",
+        y = "BMI (kg/m^2)",
+        fill = "Treatment"
+      ) +
+      theme_minimal()
+    
+    ggplotly(p)
+  })
+  
+  output$base_text <- renderUI({
+    dat <- base_data()
+    req(nrow(dat) > 0)
+    
+    n_pat    <- nrow(dat)
+    mean_age <- round(mean(dat$AGE, na.rm = TRUE), 1)
+    mean_bmi <- round(mean(dat$BMI, na.rm = TRUE), 1)
+    
+    by_trt <- dat %>%
+      group_by(TRTMT) %>%
+      summarise(
+        n        = n(),
+        mean_bmi = round(mean(BMI, na.rm = TRUE), 1),
+        .groups  = "drop"
+      )
+    
+    txt_trt <- paste(
+      by_trt$TRTMT, ": n = ", by_trt$n,
+      ", mean BMI = ", by_trt$mean_bmi,
+      collapse = "<br>"
+    )
+    
+    HTML(paste0(
+      "<b>Current selection:</b><br>",
+      "Patients: ", n_pat, "<br>",
+      "Mean age: ", mean_age, " years<br>",
+      "Overall mean BMI: ", mean_bmi, "<br><br>",
+      "<b>BMI by treatment:</b><br>",
+      txt_trt
+    ))
+  })
+  
+  # ------------ OUTCOMES TAB ------------
+  output$mortality_vb <- renderValueBox({
+    valueBox(
+      value    = sum(dig.df$DEATH == "Deceased", na.rm = TRUE),
+      subtitle = "Total Deaths",
+      icon     = icon("users"),
+      color    = "blue"
+    )
+  })
+  
+  output$mortality_placebo_vb <- renderValueBox({
+    valueBox(
+      value    = sum(dig.df$TRTMT == "Placebo" & dig.df$DEATH == "Deceased", na.rm = TRUE),
+      subtitle = "Deaths in Placebo Group",
+      icon     = icon("capsules"),
+      color    = "green"
+    )
+  })
+  
+  output$mortality_treatment_vb <- renderValueBox({
+    valueBox(
+      value    = sum(dig.df$TRTMT == "Treatment" & dig.df$DEATH == "Deceased", na.rm = TRUE),
+      subtitle = "Deaths in Treatment Group",
+      icon     = icon("capsules"),
+      color    = "yellow"
+    )
+  })
+  
   mortality_sub <- reactive({
-    req(input$TRTMT, input$DEATH)
+    req(input$TRTMT_mortality, input$DEATH)
     dig.df %>%
-      filter(TRTMT %in% input$TRTMT) %>%
+      filter(TRTMT %in% input$TRTMT_mortality) %>%
       filter(DEATH  %in% input$DEATH)
   })
   
@@ -435,13 +603,12 @@ server <- function(input, output) {
         y    = after_stat(100 * count / sum(count)),
         fill = DEATH,
         text = paste0(
-          "Treatment Group: ", TRTMT, "",
+          "Treatment Group: ", TRTMT, "<br>",
           "Patient Status: ", DEATH
         )
       )) +
       geom_bar(position = "dodge", colour = "black") +
-      scale_fill_manual(values = c("Alive" = "lightyellow",
-                                   "Deceased" = "darkblue")) +
+      scale_fill_manual(values = c("Alive" = "lightyellow", "Deceased" = "darkblue")) +
       labs(
         fill = "Patient Status",
         x    = "Patient Mortality Status",
@@ -455,10 +622,6 @@ server <- function(input, output) {
       )
     
     ggplotly(plot_outcomes_mortality1, tooltip = "text")
-  })
-  
-  output$table_outcomes_mortality <- renderDT({
-    mortality_sub()
   })
   
   patients_sub <- reactive({
@@ -480,7 +643,7 @@ server <- function(input, output) {
         y    = after_stat(100 * count / sum(count)),
         fill = WHF,
         text = paste0(
-          "Hospitalisation: ", HOSP, "",
+          "Hospitalisation: ", HOSP, "<br>",
           "Patient Status: ", WHF
         )
       )) +
