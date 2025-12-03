@@ -233,10 +233,10 @@ ui <- dashboardPage(
         )
       ),
       
-      # ---------------- TAB 3: TRIAL (empty) ----------------
+      # ---------------- TAB 3: TRIAL (still empty) ----------------
       tabItem(tabName = "trial"),
       
-      # ---------------- TAB 4: OUTCOMES ----------------
+      # ---------------- TAB 4: OUTCOMES (partner) ----------------
       tabItem(
         tabName = "outcomes",
         
@@ -250,13 +250,17 @@ ui <- dashboardPage(
               Use the filters to explore the rate of mortality and hospitalisations between groups")
           )
         ),
+        
         br(),
+        
         fluidRow(
           valueBoxOutput("mortality_vb",           width = 3),
           valueBoxOutput("mortality_placebo_vb",   width = 3),
           valueBoxOutput("mortality_treatment_vb", width = 3)
         ),
+        
         br(),
+        
         fluidRow(
           box(
             title = "Filter Box - Rate of Mortality between Groups",
@@ -276,6 +280,7 @@ ui <- dashboardPage(
               selected = death_choices
             )
           ),
+          
           box(
             title = "Rate of Mortality between Groups",
             status = "primary", solidHeader = TRUE,
@@ -284,7 +289,9 @@ ui <- dashboardPage(
             br()
           )
         ),
+        
         br(),
+        
         fluidRow(
           box(
             title = "Filter Box - Worsening Heart Failure and Hospitalisation Status",
@@ -326,15 +333,19 @@ ui <- dashboardPage(
 server <- function(input, output) {
   # ------------ ABOUT TAB ------------
   about_trtplot_data <- reactive({
-    req(input$about_trtplot_sex)      # no selection -> no plot
-    dig.df %>%
-      filter(SEX %in% input$about_trtplot_sex)
+    dat <- dig.df
+    if (!is.null(input$about_trtplot_sex) && length(input$about_trtplot_sex) > 0) {
+      dat <- dat %>% filter(SEX %in% input$about_trtplot_sex)
+    }
+    dat
   })
   
   about_sexplot_data <- reactive({
-    req(input$about_sexplot_trt)
-    dig.df %>%
-      filter(TRTMT %in% input$about_sexplot_trt)
+    dat <- dig.df
+    if (!is.null(input$about_sexplot_trt) && length(input$about_sexplot_trt) > 0) {
+      dat <- dat %>% filter(TRTMT %in% input$about_sexplot_trt)
+    }
+    dat
   })
   
   output$vb_total_patients <- renderValueBox({
@@ -557,7 +568,8 @@ server <- function(input, output) {
     ))
   })
   
-  # ------------ OUTCOMES TAB ------------
+  # ------------ OUTCOMES TAB (partner) ------------
+  
   output$mortality_vb <- renderValueBox({
     valueBox(
       value    = sum(dig.df$DEATH == "Deceased", na.rm = TRUE),
