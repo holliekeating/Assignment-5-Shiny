@@ -4,6 +4,7 @@ library(tidyverse)
 library(readr)
 library(DT)
 library(plotly)
+library(survival)
 
 dig.df <- read_csv("data/DIG.csv")%>%
   mutate(TRTMT = recode(TRTMT, '0' = "Placebo", `1` = "Treatment"),
@@ -11,7 +12,9 @@ dig.df <- read_csv("data/DIG.csv")%>%
          HOSP = recode(HOSP, '0' = "No Hospitalisation", '1' = "Hospitalised"),
          DEATH = recode(DEATH, '0' = "Alive", '1' = "Deceased"))%>%
   select(ID, TRTMT, AGE, SEX, BMI, KLEVEL, CREAT, DIABP, SYSBP, HYPERTEN, CVD, WHF, DIG, HOSP, HOSPDAYS, DEATH, DEATHDAY)
-dig.df
+
+  dig.df <- dig.df%>%
+  mutate(MONTH = round(DEATHDAY/30), MONTH= as.numeric(MONTH))
 
 trt_choices  <- sort(unique(dig.df$TRTMT))
 whf_choices  <- sort(unique(dig.df$WHF))
@@ -42,11 +45,6 @@ ui <- dashboardPage(
       tabItem(
         tabName = "baseline"
         # To be developed
-      ),
-      tabItem(
-        tabName = "trial"
-        # To be developed
-        # Risk of mortality over time
       ),
       
       tabItem(
@@ -79,9 +77,9 @@ ui <- dashboardPage(
 # Rate of mortality between groups
       fluidRow(
         box(
-        title = "Filter Box - Rate of Mortality between Groups",
+        title = "Rate of Mortality between Groups",
         status = "primary", solidHeader = TRUE,
-        width = 4,
+        width = 6,
         selectInput(
           inputId  = "TRTMT_mortality",
           label    = "Select Treatment Group:",
@@ -93,23 +91,20 @@ ui <- dashboardPage(
           inputId  = "DEATH",
           label    = "Select Patient Status:",
           choices  = death_choices,
-          selected = death_choices
-      )
-),
+          selected = death_choices),
+        
+        br(),
 
-      box(
-        title = "Rate of Mortality between Groups",
-        status = "primary", solidHeader = TRUE,
-        width = 6,
         plotlyOutput("plot_outcomes_mortality", height = 500),
+        
         br()
       ),
           
  # Worsening heart failure          
       box(
-        title = "Filter Box - Worsening Heart Failure and Hospitalisation Status",
+        title = "Worsening Heart Failure and Hospitalisation Status",
         status = "primary", solidHeader = TRUE,
-        width = 4,
+        width = 6,
       selectInput(
         inputId  = "TRTMT_whf",
         label    = "Select Treatment Group:",
@@ -128,51 +123,100 @@ ui <- dashboardPage(
         label    = "Select Hospitalisation Status:",
         choices  = hosp_choices,
         selected = hosp_choices
-      )
-),
-      box(
-        title = "Worsening Heart Failure and Hospitalisation Status",
-        status = "primary", solidHeader = TRUE,
-        width = 6,
+      ),
+      
+      br(),
+      
         plotlyOutput("plot_outcomes_whf", height = 500)
       )
 ) 
-)
-)
-)
-)
+),
+
+# Trial tab - probabilities of death/survival over time
+    tabItem(
+      tabName = "trial",
+      
+      fluidRow(
+        box(
+          title = "Trial Outcomes",
+          status = "primary",
+          width = 10,
+          solidHeader = TRUE,
+          p("This section explores the rate of survival in the Digitalis Investigation Group (DIG) Trial. 
+            Use the filters to explore the risk of mortality and survival against time between groups")
+        )
+      ),
+      
+      br(),
+      
+      fluidRow(
+        box(
+          title = "Placebo Group - Probability of Survival over Time",
+          status = "primary", solidHeader = TRUE,
+          width = 6,
+            plotlyOutput("plot_surv_placebo", height = 400)),
+          box(
+            title = "Treatment Group - Probability of Survival over Time",
+            status = "primary",
+            solidHeader = TRUE,
+            width = 6,
+            plotlyOutput("plot_surv_treatment", height = 400),
+          
+          br()
+        )
+      )
+    )
+)))
+
 
 server <- function(input, output) {
 
 # Patient outcomes: Rate of mortality between groups
-  
+  # Value boxes
   output$mortality_vb <- renderValueBox({
+    
+    total_patients <- nrow(dig.df)
+    total_deaths <- sum(dig.df$DEATH == "Deceased", na.rm = TRUE)
+    perc_deaths <- round(100*total_deaths/total_patients, 1)
+
+    
     valueBox(
-      value    = sum(dig.df$DEATH == "Deceased", na.rm = TRUE),
-      subtitle = "Total Deaths",
-      icon     = icon("users"),
-      color    = "blue"
-    )
-  })
-  
-  output$mortality_placebo_vb <- renderValueBox({
-    valueBox(
-      value    = sum(dig.df$TRTMT == "Placebo" & dig.df$DEATH == "Deceased", na.rm = TRUE),
-      subtitle = "Mortality Rate in Placebo Group",
-      icon     = icon("capsules"),
-      color    = "green"
-    )
-  })
-  
-  output$mortality_treatment_vb <- renderValueBox({
-    valueBox(
-      value    = sum(dig.df$TRTMT == "Treatment" & dig.df$DEATH == "Deceased", na.rm = TRUE),
-      subtitle = "Mortality Rate in Treatment Group",
-      icon     = icon("capsules"),
+      value    = paste0(perc_deaths, "%"),
+      subtitle = "Overall Mortality",
       color    = "yellow"
     )
   })
   
+  dig.df$DEATH
+  
+  output$mortality_placebo_vb <- renderValueBox({
+    
+    placebo_total <- sum(dig.df$TRTMT == "Placebo", na.rm = TRUE)
+    placebo_deaths <- sum(dig.df$TRTMT == "Placebo" & dig.df$DEATH == "Deceased")
+    perc_deaths_placebo <- round(100*placebo_deaths/placebo_total, 1)
+
+    
+    valueBox(
+      value    = paste0(perc_deaths_placebo, "%"),
+      subtitle = "Mortality Rate in Placebo Group",
+      color    = "purple"
+    )
+  })
+  
+  output$mortality_treatment_vb <- renderValueBox({
+    
+    trtmt_total <- sum(dig.df$TRTMT == "Treatment", na.rm = TRUE)
+    trtmt_deaths <- sum(dig.df$TRTMT == "Treatment" & dig.df$DEATH == "Deceased")
+    perc_deaths_trtmt <- round(100*trtmt_deaths/trtmt_total, 1)
+    
+    valueBox(
+      value    = paste0(perc_deaths_trtmt, "%"),
+      subtitle = "Mortality Rate in Treatment Group",
+      color    = "green"
+    )
+  })
+  
+  #Plots
   mortality_sub <- reactive({
     req(input$TRTMT_mortality, input$DEATH)
     
@@ -184,6 +228,8 @@ server <- function(input, output) {
   output$plot_outcomes_mortality <- renderPlotly({ 
     dat <- mortality_sub()
     req(nrow(dat) > 0)  
+    
+    
     
     plot_outcomes_mortality1 <- 
      dat %>%
@@ -201,6 +247,7 @@ server <- function(input, output) {
         fill = "Patient Status",
         x    = "Patient Mortality Status",
         y    = "Percentage (%)")+
+      theme_minimal()+
       theme(
         plot.title = element_text(face = "bold", size = 18),
         axis.title.x = element_text(face = "bold", size = 12),
@@ -211,7 +258,7 @@ server <- function(input, output) {
   })
   
 
-# Patient outcomes: rate of hospitalisations and WHF between groups   
+# Patient outcomes: rate of hospitalizations and WHF between groups   
   patients_sub <- reactive({
     req(input$TRTMT_whf, input$WHF, input$HOSP)
     
@@ -240,6 +287,7 @@ server <- function(input, output) {
         fill = "Patient Status",
         x    = "Patient Hospitalisation Status",
         y    = "Percentage (%)")+
+    theme_minimal()+
       theme(
         plot.title = element_text(face = "bold", size = 18),
         axis.title.x = element_text(face = "bold", size = 12),
@@ -248,6 +296,96 @@ server <- function(input, output) {
       )
     ggplotly(plot_outcomes_whf1, tooltip = "text")
   })
+  
+  
+  
+  
+  
+  
+  
+  
+  # Trial Outcomes
+  # Get the probability of survival for each group
+  # Placebo 
+  sf_placebo <- survfit(Surv(MONTH, DEATH == "Deceased") ~ 1,
+                        data = dig.df %>% filter(TRTMT == "Placebo"))
+  sum_placebo <- summary(sf_placebo)
+  
+  placebo_df <- data.frame(
+    month    = sum_placebo$time,
+    survival = sum_placebo$surv,
+    n_risk   = sum_placebo$n.risk,
+    deaths   = sum_placebo$n.event
+  )
+  
+# Treatment 
+  sf_treatment <- survfit(Surv(MONTH, DEATH == "Deceased") ~ 1,
+                          data = dig.df %>% filter(TRTMT == "Treatment"))
+  sum_treatment <- summary(sf_treatment)
+  
+  treatment_df <- data.frame(
+    month    = sum_treatment$time,
+    survival = sum_treatment$surv,
+    n_risk   = sum_treatment$n.risk,
+    deaths   = sum_treatment$n.event
+  )
+  
+  placebo_df$survival_perc <- placebo_df$survival*100
+  treatment_df$survival_perc <- treatment_df$survival*100
+  
+  # Plot: Placebo
+  output$plot_surv_placebo <- renderPlotly({
+    plot_ly(
+      data = placebo_df,
+      x    = ~month,
+      y    = ~survival_perc,
+      type = "scatter",
+      mode = "lines",
+      line = list(width = 5, color = "darkblue"),
+      hoverinfo = "text",
+      text = ~paste0(
+        "Group: Placebo", "<br>",
+        "Month: ", month, "<br>",
+        "Survival: ", round(survival, 3), "<br>",
+        "At risk: ", n_risk, "<br>",
+        "Deaths: ", deaths
+      )
+    ) %>%
+      layout(
+        xaxis = list(title = "Time (months)"),
+        yaxis = list(title = "Probability of Survival %", range = c(50, 100))
+      )
+  })
+  
+  
+  # Plot: Treatment
+  output$plot_surv_treatment <- renderPlotly({
+    plot_ly(
+      data = treatment_df,
+      x    = ~month,
+      y    = ~survival_perc,
+      type = "scatter",
+      mode = "lines",
+      line = list(width = 5, color = "orange"),
+      hoverinfo = "text",
+      text = ~paste0(
+        "Group: Treatment", "<br>",
+        "Month: ", month, "<br>",
+        "Survival: ", round(survival, 3), "<br>",
+        "At risk: ", n_risk, "<br>",
+        "Deaths: ", deaths
+      )
+    ) %>%
+      layout(
+        xaxis = list(title = "Time (months)"),
+        yaxis = list(title = "Probability of Survival %", range = c(50, 100))
+      )
+  })
+  
+  
+  
+
+  
 }
 
 shinyApp(ui, server)
