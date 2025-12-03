@@ -467,6 +467,105 @@ output$plot_baseline <- renderPlot({
 ##=====tab 3 (Hollie)======
 
 
+c_data <- reactive({
+    d <- dig
+    if (input$c_sex != "All") d <- d %>% filter(sex == input$c_sex)
+    d <- d %>% filter(age >= input$c_age[1], age <= input$c_age[2])
+    d <- d %>%
+      mutate(
+        ef_cat = case_when(
+          ejf_per < 40 ~ "Low EF",
+          ejf_per >= 40 & ejf_per < 50 ~ "Mid-range EF",
+          ejf_per >= 50 ~ "Preserved EF",
+          TRUE ~ NA_character_
+        )
+      )
+    if (input$c_ef != "All") d <- d %>% filter(ef_cat == input$c_ef)
+    d
+  })
+  
+ 
+
+output$tbl_mort <- renderDT({
+    d <- c_data()
+    validate_data(d)
+    mort <- d %>%
+      group_by(treatment) %>%
+      summarise(
+        n        = n(),
+        deaths   = sum(death == 1, na.rm = TRUE),
+        death_pct = 100 * deaths / n,
+        .groups  = "drop"
+      )
+    datatable(mort, rownames = FALSE, options = list(pageLength = 5))
+  })
+  
+  
+
+output$plot_mort <- renderPlot({
+    d <- c_data()
+    validate_data(d)
+    mort <- d %>%
+      group_by(treatment) %>%
+      summarise(
+        deaths = mean(death == 1, na.rm = TRUE),
+        .groups = "drop"
+      )
+    ggplot(mort, aes(x = treatment, y = deaths)) +
+      geom_col() +
+      scale_y_continuous(labels = percent_format(accuracy = 1)) +
+      labs(x = "Treatment", y = "Mortality (%)",
+           title = "Mortality by treatment")
+  })
+  
+ 
+
+output$tbl_hosp <- renderDT({
+    d <- c_data()
+    validate_data(d)
+    hosp <- d %>%
+      group_by(treatment) %>%
+      summarise(
+        n          = n(),
+        any_hosp   = mean(hosp == 1, na.rm = TRUE),
+        mean_days  = mean(hospdays, na.rm = TRUE),
+        mean_nhosp = mean(nhosp, na.rm = TRUE),
+        .groups    = "drop"
+      )
+    datatable(hosp, rownames = FALSE, options = list(pageLength = 5))
+  })
+  
+  
+
+output$plot_hosp <- renderPlot({
+    d <- c_data()
+    validate_data(d)
+    hosp <- d %>%
+      group_by(treatment) %>%
+      summarise(
+        any_hosp = mean(hosp == 1, na.rm = TRUE),
+        .groups  = "drop"
+      )
+    ggplot(hosp, aes(x = treatment, y = any_hosp)) +
+      geom_col() +
+      scale_y_continuous(labels = percent_format(accuracy = 1)) +
+      labs(x = "Treatment", y = "Hospitalized (%)",
+           title = "Hospitalization by treatment")
+  })
+  
+  
+
+output$plot_deathday <- renderPlot({
+    d <- c_data()
+    validate_data(d)
+    ggplot(d %>% filter(death == 1), aes(x = deathday)) +
+      geom_histogram(binwidth = 100) +
+      labs(x = "Days to death", y = "Count",
+           title = "Distribution of days to death")
+  })
+  
+##===tab4(xiangqi)======
+
 
 
 
