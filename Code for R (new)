@@ -36,7 +36,7 @@ dig <- dig_raw %>%
   )
 
 validate_data <- function(d) {
-  validate(need(nrow(d) > 0))
+  validate(need(nrow(d) > 0, "No data available for current filters. Please adjust."))
 }
 
 ## ===== 2. UI =====
@@ -564,18 +564,86 @@ output$plot_deathday <- renderPlot({
            title = "Distribution of days to death")
   })
   
-##===tab4(xiangqi)======
+##=====tab4(xiangqi)======
 
 
+output$plot_rel <- renderPlot({
+    
+    d <- dig
+    validate_data(d)
+    
+    xvar <- input$r_x
+    yvar <- input$r_y
+    col  <- input$r_col
+    
+    if (col == "none") {
+      p <- ggplot(d, aes_string(x = xvar, y = yvar))
+    } else {
+      p <- ggplot(d, aes_string(x = xvar, y = yvar, color = col))
+    }
+    
+    p <- p + geom_point(alpha = 0.6)
+    
+    if (isTRUE(input$r_smooth)) {
+      p <- p + geom_smooth(method = "lm", se = FALSE)
+    }
+    
+    p + labs(
+      x = xvar,
+      y = yvar,
+      title = "Relationship between selected variables"
+    )
+  })
+  
+  output$txt_cor <- renderText({
+    x <- dig[[input$r_x]]
+    y <- dig[[input$r_y]]
+    r <- suppressWarnings(cor(x, y, use = "complete.obs"))
+    if (is.na(r)) {
+      "Correlation not available"
+    } else {
+      round(r, 3)
+    }
+  })
 
 
+##======tab5(Xiangqi)=======
+ 
 
+patient_filtered <- reactive({
+    
+    d <- dig
+    if (input$p_trt != "All")  d <- d %>% filter(treatment == input$p_trt)
+    if (input$p_sex != "All")  d <- d %>% filter(sex == input$p_sex)
+    
+    d <- d %>% filter(age >= input$p_age[1], age <= input$p_age[2])
+    
+    if (input$p_status == "Died") {
+      d <- d %>% filter(death == 1)
+    } else if (input$p_status == "Alive") {
+      d <- d %>% filter(death == 0)
+    } else if (input$p_status == "Hospitalized") {
+      d <- d %>% filter(hosp == 1)
+    } else if (input$p_status == "Never hospitalized") {
+      d <- d %>% filter(hosp == 0)
+    }
+    d
+  })
+  
+  output$tbl_patients <- renderDT({
+    d <- patient_filtered()
+    validate_data(d)
+    cols_to_show <- intersect(
+      c("ID","treatment","sex","race","age","bmi","ejf_per",
+        "klevel","creatinine","sbp","dbp","death","hosp","nhosp","deathday"),
+      names(d)
+    )
+    datatable(
+      d[, cols_to_show, drop = FALSE],
+      options = list(pageLength = 15, scrollX = TRUE)
+    )
+  })
+}
 
-
-
-
-
-
-
-
+shinyApp(ui, server)
 
