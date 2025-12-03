@@ -1,9 +1,5 @@
-install.packages(c("shiny", "shinydashboard", "dplyr", "ggplot2", "DT", "scales"))
 
-DIG Trial Dashboard - Group Project  
-Manasvi: Tabs 1–2  |  Hollie: Tab 3  |  Xiangqi: Tabs 4–6library(shiny)
-
-
+library(shiny)
 library(shinydashboard)
 library(dplyr)
 library(ggplot2)
@@ -11,7 +7,7 @@ library(DT)
 library(scales)
 
 ## ===== 1. Data import and preprocessing =====
-dig_raw <- read.csv("data/DIG.csv")
+dig_raw <- read.csv("DIG.csv")
 
 dig <- dig_raw %>%
   mutate(
@@ -55,11 +51,11 @@ ui <- dashboardPage(
     )
   ),
   
-dashboardBody(
-    tabItems(      
-
-## ======= Tab 1: About the DIG Study (Manasvi) ======
-tabItem(
+  dashboardBody(
+    tabItems(
+      
+      ## ======= Tab 1: About the DIG Study (Manasvi) ======
+      tabItem(
         tabName = "about",
         fluidRow(
           box(
@@ -86,11 +82,8 @@ tabItem(
         )
       ),
       
-
-## ======== Tab 2: Baseline Characteristics (Manasvi) ======
-      
-
-tabItem(
+      ## ======== Tab 2: Baseline Characteristics (Manasvi) ======
+      tabItem(
         tabName = "baseline",
         fluidRow(
           box(
@@ -111,7 +104,7 @@ tabItem(
             )
           ),
           
-box(
+          box(
             width = 9, status = "primary", solidHeader = TRUE,
             title = "Baseline characteristics by treatment",
             tabsetPanel(
@@ -131,7 +124,7 @@ box(
                                          "Diastolic BP" = "dbp")
                            )
                          ),
-                        column(
+                         column(
                            6,
                            radioButtons("b_plot_type", "Plot type",
                                         choices = c("Histogram" = "hist",
@@ -139,136 +132,126 @@ box(
                                         inline = TRUE)
                          )
                        ),
-
                        plotOutput("plot_baseline")
               )
             )
           )
         )
       ),
-
-##=========Tab3: Clinical Outcomes (Hollie)=========
-
-
-tabItem(
-   tabName = "clinical",
-   fluidRow(
-     box(
-        width =3, status = "primary", solidHeader = TRUE,
-        title = "Filters",
-        selectInput("c_sex", "Sex",
-                    choices = c("All", levels(dig$sex))),
-        sliderInput("c_age", "Age range",
-                    min = floor(min(dig$age, na.rm = TRUE)),
-                    max = ceiling(max(dig$age, na.rm = TRUE)),
-                    value = c(40,80), step = 1),
-        selectInput("c_ef", "EF category",
-                    choices = c("All", "Low EF", "Mid-range EF", "Preserved EF"))
-),
-     
-    box(
-        width = 9, status = "primany", solidHeader =TRUE, 
-        title = "Clinical outcomes",
-        tabsetPanel(
-          tabPanel("Mortality by treatment",
-             DTOutput("tbl_mort"),
-             plotOutput("plot_mort")),
-          tabPanel("Hospitalisation",
-             DTOutput("tbl_hosp"),
-             plotOutput("plot_hosp")),
-          tabPanel("Days to death (histogram)",
-             plotOutput("plot_deathday"))
-       )
-     )
-   )
-),
-
-
-##========== Tab4: Variable explorer (Xiangqi)=======
-
-
-tabItem(
- tabName = "relations",
- fluidRow(
-    box(
-       width = 3, status = "primary', solidHeader = TRUE,
-       title = "Controls"
-
-    selectInput(
-      inputId = "r_x",
-      label   = "X variable",
-      choices = c("Age"         = "age",
-                  "BMI"         = "bmi",
-                  "Ejection fraction"    = "ejf_per",
-                  "Potassium"   = "klevel",
-                  "Creatinine"  = "creatinine",
-                  "Systolic BP" = "sbp",
-                  "Diastolic BP" = "dbp")
-),
-
-selectInput(
-    inputId = "r_y",
-    label   = "Y variable",
-    choices = c("Ejection fraction" = "ejf_per",
-                "BMI"               = "bmi",
-                "Potassium"         = "klevel",
-                "Creatinine"        = "creatinine",
-                "Systolic BP"       = "sbp"
-                "Diastolic BP"      = "dbp")
-),
-
-selectInput(
-    inputId = "r_col",
-    label   = "Colour / Group by",
-    choices = c("None"      = "none"
-                "Treatment" = "treatment"
-                "Sex"       = "sex"
-                "Race"      = "race")
-),
-
-checkboxInput(
- inputId = "r_smooth",
- label   = "Add linear trend line",
- value   = TRUE
-   )
-),
-
-box(
- width = 9, status = "primary", solidHeader = TRUE,
- title = "Scatterplot & Correlation",
- plotOutput("plot_rel"),
- br(),
- strong("Pearson corelation: "),
- textOutput("txt_cor")
-   )
-  )
-),
-
-##========= tab5:Patinet explorer (Xiangqi) ========
-
-
-tabItem(
-  tabName = "patients",
-  fluidRow(
-     bow(
-       width = 3, status = primary", solideHeader = TRUE,
-       title = "Filters"
-
-       selectInput(
+      
+      ##=========Tab3: Clinical Outcomes (Hollie)=========
+      tabItem(
+        tabName = "clinical",
+        fluidRow(
+          box(
+            width =3, status = "primary", solidHeader = TRUE,
+            title = "Filters",
+            selectInput("c_sex", "Sex",
+                        choices = c("All", levels(dig$sex))),
+            sliderInput("c_age", "Age range",
+                        min = floor(min(dig$age, na.rm = TRUE)),
+                        max = ceiling(max(dig$age, na.rm = TRUE)),
+                        value = c(40,80), step = 1),
+            selectInput("c_ef", "EF category",
+                        choices = c("All", "Low EF", "Mid-range EF", "Preserved EF"))
+          ),
+          
+          box(
+            width = 9, status = "primary", solidHeader = TRUE, 
+            title = "Clinical outcomes",
+            tabsetPanel(
+              tabPanel("Mortality by treatment",
+                       DTOutput("tbl_mort"),
+                       plotOutput("plot_mort")),
+              tabPanel("Hospitalisation",
+                       DTOutput("tbl_hosp"),
+                       plotOutput("plot_hosp")),
+              tabPanel("Days to death (histogram)",
+                       plotOutput("plot_deathday"))
+            )
+          )
+        )
+      ),
+      
+      ##========== Tab4: Variable explorer (Xiangqi)=======
+      tabItem(
+        tabName = "relations",
+        fluidRow(
+          box(
+            width = 3, status = "primary", solidHeader = TRUE,
+            title = "Controls (Xiangqi)",
+            
+            selectInput(
+              inputId = "r_x",
+              label   = "X variable",
+              choices = c("Age"               = "age",
+                          "BMI"               = "bmi",
+                          "Ejection fraction" = "ejf_per",
+                          "Potassium"         = "klevel",
+                          "Creatinine"        = "creatinine",
+                          "Systolic BP"       = "sbp",
+                          "Diastolic BP"      = "dbp")
+            ),
+            
+            selectInput(
+              inputId = "r_y",
+              label   = "Y variable",
+              choices = c("Ejection fraction" = "ejf_per",
+                          "BMI"               = "bmi",
+                          "Potassium"         = "klevel",
+                          "Creatinine"        = "creatinine",
+                          "Systolic BP"       = "sbp",
+                          "Diastolic BP"      = "dbp")
+            ),
+            
+            selectInput(
+              inputId = "r_col",
+              label   = "Colour / Group by",
+              choices = c("None"      = "none",
+                          "Treatment" = "treatment",
+                          "Sex"       = "sex",
+                          "Race"      = "race")
+            ),
+            
+            checkboxInput(
+              inputId = "r_smooth",
+              label   = "Add linear trend line",
+              value   = TRUE
+            )
+          ),
+          
+          box(
+            width = 9, status = "primary", solidHeader = TRUE,
+            title = "Scatterplot & Correlation",
+            plotOutput("plot_rel"),
+            br(),
+            strong("Pearson correlation: "),
+            textOutput("txt_cor")
+          )
+        )
+      ),
+      
+      ##========= Tab5: Patient explorer (Xiangqi) ========
+      tabItem(
+        tabName = "patients",
+        fluidRow(
+          box(
+            width = 3, status = "primary", solidHeader = TRUE,
+            title = "Filters (Xiangqi)",
+            
+            selectInput(
               inputId = "p_trt",
               label   = "Treatment",
               choices = c("All", levels(dig$treatment))
             ),
             
-
-       selectInput(
+            selectInput(
               inputId = "p_sex",
               label   = "Sex",
               choices = c("All", levels(dig$sex))
             ),
-           
-
-       sliderInput(
+            
+            sliderInput(
               inputId = "p_age",
               label   = "Age range",
               min     = floor(min(dig$age, na.rm = TRUE)),
@@ -276,9 +259,8 @@ tabItem(
               value   = c(40, 80),
               step    = 1
             ),
-           
-
-      selectInput(
+            
+            selectInput(
               inputId = "p_status",
               label   = "Status",
               choices = c("All",
@@ -289,50 +271,44 @@ tabItem(
             )
           ),
           
-       box(
+          box(
             width = 9, status = "primary", solidHeader = TRUE,
             title = "Patient-level data",
             DTOutput("tbl_patients")
           )
         )
       ),
-
-##========tab 6:Documentation and Help (Xiangqi)=======
-
-
-tabItem(
-  tabName = "docs",
-  fluidRow(
-     box(
-       width = 12, status = "primary", solidHeader = TRUE,
-       title = "Documenttation and Help",
-
-       h3("Purpose"),
-       p("This Shiny dashboard provides an interactive overview of the DIG trial dataset,"),
-       p("focusing on baseline characteristics, treatment differences, clinical outcomes,"),
-       p("and relationships between key clinical variables."),
-
-       
-       h3("Tab overview"),
-       tags$ul(
-          
-          tags$li(strong("Tab 1 – About:"), " overall description of the DIG study and high-level summaries."),
-          tags$li(strong("Tab 2 – Baseline characteristics:"), 
+      
+      ##======== Tab 6:Documentation and Help (Xiangqi)=======
+      tabItem(
+        tabName = "docs",
+        fluidRow(
+          box(
+            width = 12, status = "primary", solidHeader = TRUE,
+            title = "Documentation and Help",
+            
+            h3("Purpose"),
+            p("This Shiny dashboard provides an interactive overview of the DIG trial dataset,"),
+            p("focusing on baseline characteristics, treatment differences, clinical outcomes,"),
+            p("and relationships between key clinical variables."),
+            
+            h3("Tab overview"),
+            tags$ul(
+              tags$li(strong("Tab 1 – About:"), " overall description of the DIG study and high-level summaries."),
+              tags$li(strong("Tab 2 – Baseline characteristics:"), 
                       " summary statistics and visualisations of baseline variables by treatment."),
-          tags$li(strong("Tab 3 – Clinical outcomes:"), 
+              tags$li(strong("Tab 3 – Clinical outcomes:"), 
                       " mortality and hospitalisation summaries with dynamic filters."),
-          tags$li(strong("Tab 4 – Variable explorer:"), 
+              tags$li(strong("Tab 4 – Variable explorer:"), 
                       " interactive scatterplots with X/Y variable selection, grouping and correlation."),
-          tags$li(strong("Tab 5 – Patient explorer:"), 
+              tags$li(strong("Tab 5 – Patient explorer:"), 
                       " patient-level table with filters for age, sex, treatment and status."),
-          tags$li(strong("Tab 6 – Documentation & help:"), 
+              tags$li(strong("Tab 6 – Documentation & help:"), 
                       " explanation of the app, workflow and team contributions.")
             ),
-
-       
-       h3("Team contributions"),
-        tags$ul(
-              
+            
+            h3("Team contributions"),
+            tags$ul(
               tags$li(
                 tags$b("Manasvi — Technical structure and baseline analysis: "),
                 "set up the overall Shiny project structure and created the core layout for the app. ",
@@ -359,11 +335,9 @@ tabItem(
                 "and wrote this documentation/help tab (Tab 6)."
               )
             ),
-
-       
-      h3("Why these roles fit each member"),
-       tags$ul(
-              
+            
+            h3("Why these roles fit each member"),
+            tags$ul(
               tags$li(
                 tags$b("Manasvi: "),
                 "already had a strong understanding of the DIG dataset from Assignment 4 and had developed ",
@@ -392,14 +366,11 @@ tabItem(
   )
 )
 
-
-
 ##========== 3. Server=========
-
 
 server <- function(input, output, session) {
   
-  ## ===tab 1: About (Manasvi) ======
+  ## === tab 1: About (Manasvi) ======
   output$vb_total <- renderValueBox({
     valueBox(nrow(dig), "Total patients", icon = icon("users"), color = "teal")
   })
@@ -422,21 +393,18 @@ server <- function(input, output, session) {
       labs(title = "Sex distribution") +
       scale_y_continuous(labels = percent_format(accuracy = 1))
   })
-
-##====tab2(manasvi)====
-
-b_data <- reactive({
+  
+  ##==== tab2 (Manasvi) ====
+  b_data <- reactive({
     d <- dig
-    if (input$b_sex != "All") d <- d %>% filter(sex == input$b_sex)
+    if (input$b_sex != "All")  d <- d %>% filter(sex == input$b_sex)
     if (input$b_race != "All") d <- d %>% filter(race == input$b_race)
     d <- d %>% filter(age >= input$b_age[1], age <= input$b_age[2])
     d <- d %>% filter(treatment %in% input$b_trt)
     d
   })
   
-  
-
-output$tbl_baseline <- renderDT({
+  output$tbl_baseline <- renderDT({
     d <- b_data()
     validate_data(d)
     summary_df <- d %>%
@@ -455,9 +423,7 @@ output$tbl_baseline <- renderDT({
     datatable(summary_df, rownames = FALSE, options = list(pageLength = 5))
   })
   
-  
-
-output$plot_baseline <- renderPlot({
+  output$plot_baseline <- renderPlot({
     d <- b_data()
     validate_data(d)
     var <- input$b_var
@@ -473,20 +439,18 @@ output$plot_baseline <- renderPlot({
              title = paste("Boxplot of", var, "by treatment"))
     }
   })
-
-##=====tab 3 (Hollie)======
-
-
-c_data <- reactive({
+  
+  ##===== tab 3 (Hollie) ======
+  c_data <- reactive({
     d <- dig
     if (input$c_sex != "All") d <- d %>% filter(sex == input$c_sex)
     d <- d %>% filter(age >= input$c_age[1], age <= input$c_age[2])
     d <- d %>%
       mutate(
         ef_cat = case_when(
-          ejf_per < 40 ~ "Low EF",
+          ejf_per < 40              ~ "Low EF",
           ejf_per >= 40 & ejf_per < 50 ~ "Mid-range EF",
-          ejf_per >= 50 ~ "Preserved EF",
+          ejf_per >= 50             ~ "Preserved EF",
           TRUE ~ NA_character_
         )
       )
@@ -494,9 +458,7 @@ c_data <- reactive({
     d
   })
   
- 
-
-output$tbl_mort <- renderDT({
+  output$tbl_mort <- renderDT({
     d <- c_data()
     validate_data(d)
     mort <- d %>%
@@ -510,9 +472,7 @@ output$tbl_mort <- renderDT({
     datatable(mort, rownames = FALSE, options = list(pageLength = 5))
   })
   
-  
-
-output$plot_mort <- renderPlot({
+  output$plot_mort <- renderPlot({
     d <- c_data()
     validate_data(d)
     mort <- d %>%
@@ -528,9 +488,7 @@ output$plot_mort <- renderPlot({
            title = "Mortality by treatment")
   })
   
- 
-
-output$tbl_hosp <- renderDT({
+  output$tbl_hosp <- renderDT({
     d <- c_data()
     validate_data(d)
     hosp <- d %>%
@@ -545,9 +503,7 @@ output$tbl_hosp <- renderDT({
     datatable(hosp, rownames = FALSE, options = list(pageLength = 5))
   })
   
-  
-
-output$plot_hosp <- renderPlot({
+  output$plot_hosp <- renderPlot({
     d <- c_data()
     validate_data(d)
     hosp <- d %>%
@@ -563,9 +519,7 @@ output$plot_hosp <- renderPlot({
            title = "Hospitalization by treatment")
   })
   
-  
-
-output$plot_deathday <- renderPlot({
+  output$plot_deathday <- renderPlot({
     d <- c_data()
     validate_data(d)
     ggplot(d %>% filter(death == 1), aes(x = deathday)) +
@@ -574,11 +528,8 @@ output$plot_deathday <- renderPlot({
            title = "Distribution of days to death")
   })
   
-##=====tab4(xiangqi)======
-
-
-output$plot_rel <- renderPlot({
-    
+  ##===== tab4 (Xiangqi) ======
+  output$plot_rel <- renderPlot({
     d <- dig
     validate_data(d)
     
@@ -615,13 +566,9 @@ output$plot_rel <- renderPlot({
       round(r, 3)
     }
   })
-
-
-##======tab5(Xiangqi)=======
- 
-
-patient_filtered <- reactive({
-    
+  
+  ##====== tab5 (Xiangqi) =======
+  patient_filtered <- reactive({
     d <- dig
     if (input$p_trt != "All")  d <- d %>% filter(treatment == input$p_trt)
     if (input$p_sex != "All")  d <- d %>% filter(sex == input$p_sex)
@@ -655,5 +602,5 @@ patient_filtered <- reactive({
   })
 }
 
-shinyApp(ui, server)
+shinyApp(ui, server)   
 
