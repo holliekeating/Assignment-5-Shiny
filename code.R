@@ -60,9 +60,9 @@ ui <- dashboardPage(
             status = "primary",
             width = 3,
             solidHeader = TRUE,
-            p("This section explores patient outcomes in the Digitalis Investigation Group (DIG) Trial. 
-              34.9% of patients died overall in the trial. 35.1% of patients in the placebo group died. 34.8% of patients in the treatment group died.  
-              Use the filters to explore the rate of mortality, rate of cardiovascular disease and rate of hospitalisations between groups.")
+            p("This section explores patient outcomes in the Digitalis Investigation Group (DIG) Trial.   
+              Use the filters to explore the rate of mortality, rate of cardiovascular disease and rate of hospitalisations between groups.
+              Explore the interactive plots for information on patient outcomes.")
         ),
 # Value boxes    
         valueBoxOutput("mortality_vb", width = 3),
@@ -169,10 +169,12 @@ br(),
         box(
           title = "Trial Outcomes",
           status = "primary",
-          width = 10,
+          width = 12,
           solidHeader = TRUE,
-          p("This section explores the rate of survival in the Digitalis Investigation Group (DIG) Trial. 
-            Use the filters to explore the risk of mortality and survival against time between groups")
+          p("This section explores the probability of survival in the Digitalis Investigation Group (DIG) Trial.
+            As shown in the graphs there is a steady decreasing probability of survival in both the treatment and placebo groups. 
+            By the end of the trial, in month 56 the probability of survival in the placebo group was 57.10% and in the treatment group it was 58.40%.
+            Explore the interactive plots and survival tables for information on the trial outcomes.")
         )
       ),
       
@@ -232,7 +234,7 @@ server <- function(input, output) {
     valueBox(
       value    = paste0(perc_deaths, "%"),
       subtitle = "Overall Mortality",
-      color    = "yellow"
+      color    = "green"
     )
   })
   
@@ -246,8 +248,8 @@ server <- function(input, output) {
     
     valueBox(
       value    = paste0(perc_deaths_placebo, "%"),
-      subtitle = "Mortality Rate in Placebo Group",
-      color    = "purple"
+      subtitle = "Rate of Mortality in Placebo Group",
+      color    = "olive"
     )
   })
   
@@ -259,8 +261,8 @@ server <- function(input, output) {
     
     valueBox(
       value    = paste0(perc_deaths_trtmt, "%"),
-      subtitle = "Mortality Rate in Treatment Group",
-      color    = "green"
+      subtitle = "Rate of Mortality in Treatment Group",
+      color    = "teal"
     )
   })
   
@@ -274,8 +276,8 @@ server <- function(input, output) {
     
     valueBox(
       value    = paste0(perc_cvd_placebo, "%"),
-      subtitle = "Cardiovascular Disease Rate in Placebo Group",
-      color    = "purple"
+      subtitle = "Rate of Cardiovascular Disease in Placebo Group",
+      color    = "blue"
     )
   })
   
@@ -287,8 +289,8 @@ server <- function(input, output) {
     
     valueBox(
       value    = paste0(perc_cvd_trtmt, "%"),
-      subtitle = "Cardiovascular Disease Rate in Treatment Group",
-      color    = "green"
+      subtitle = "Rate of Cardiovascular Disease in Treatment Group",
+      color    = "navy"
     )
   })
   
@@ -318,7 +320,7 @@ server <- function(input, output) {
           "Patient Status: ", DEATH
       ))) +
       geom_bar(position = "dodge", colour = "black") +
-      scale_fill_manual(values = c("Alive"= "lightyellow", "Deceased" = "darkblue"))+
+      scale_fill_manual(values = c("Alive"= "lightyellow", "Deceased" = "darkgreen"))+
       labs(
         fill = "Patient Status",
         x    = "Patient Mortality Status",
@@ -358,7 +360,7 @@ server <- function(input, output) {
           "Patient Status: ", CVD
         ))) +
       geom_bar(position = "dodge", colour = "black") +
-      scale_fill_manual(values = c("Healthy"= "lightyellow", "Cardiovascular Disease" = "lightblue"))+
+      scale_fill_manual(values = c("Healthy"= "lightyellow", "Cardiovascular Disease" = "darkblue"))+
       labs(
         fill = "Patient Status",
         x    = "Treatment Group",
@@ -461,7 +463,7 @@ server <- function(input, output) {
       y    = ~survival_perc,
       type = "scatter",
       mode = "lines",
-      line = list(width = 5, color = "darkblue"),
+      line = list(width = 8, color = "darkgreen"),
       hoverinfo = "text",
       text = ~paste0(
         "Group: Placebo", "<br>",
@@ -486,7 +488,7 @@ server <- function(input, output) {
       y    = ~survival_perc,
       type = "scatter",
       mode = "lines",
-      line = list(width = 5, color = "orange"),
+      line = list(width = 8, color = "darkgreen"),
       hoverinfo = "text",
       text = ~paste0(
         "Group: Treatment", "<br>",
@@ -527,6 +529,7 @@ server <- function(input, output) {
 
 
 shinyApp(ui, server)
+
 
 
 
