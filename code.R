@@ -64,7 +64,7 @@ ui <- dashboardPage(
               34.9% of patients died overall in the trial. 35.1% of patients in the placebo group died. 34.8% of patients in the treatment group died.  
               Use the filters to explore the rate of mortality, rate of cardiovascular disease and rate of hospitalisations between groups.")
         ),
-    
+# Value boxes    
         valueBoxOutput("mortality_vb", width = 3),
         valueBoxOutput("mortality_placebo_vb", width = 3),
         valueBoxOutput("mortality_treatment_vb", width = 3),
@@ -79,7 +79,7 @@ ui <- dashboardPage(
         box(
         title = "Rate of Mortality between Groups",
         status = "primary", solidHeader = TRUE,
-        width = 4,
+        width = 6,
         selectInput(
           inputId  = "TRTMT_mortality",
           label    = "Select Treatment Group:",
@@ -104,7 +104,7 @@ ui <- dashboardPage(
  box(
    title = "Exploring the Relationship between Cardiovascular Disease and Mortality between Groups",
    status = "primary", solidHeader = TRUE,
-   width = 4,
+   width = 6,
    selectInput(
      inputId  = "TRTMT_cvd",
      label    = "Select Treatment Group:",
@@ -122,13 +122,19 @@ ui <- dashboardPage(
    br(),
    
    plotlyOutput("plot_outcomes_cvd", height = 400)
+   )
  ),   
+br(),          
           
  # Worsening heart failure          
-      box(
-        title = "Worsening Heart Failure and Hospitalisation Status",
-        status = "primary", solidHeader = TRUE,
-        width = 4,
+      fluidRow(
+        column(
+          width = 8,
+          offset = 2,
+          box(
+            title = "Worsening Heart Failure and Hospitalisation Status",
+            status = "primary", solidHeader = TRUE,
+            width = 12,
       selectInput(
         inputId  = "TRTMT_whf",
         label    = "Select Treatment Group:",
@@ -151,10 +157,9 @@ ui <- dashboardPage(
       
       br(),
       
-        plotlyOutput("plot_outcomes_whf", height = 400)
+        plotlyOutput("plot_outcomes_whf", height = 500)
       )
-) 
-),
+))),
 
 # Trial tab - probabilities of death/survival over time
     tabItem(
@@ -320,10 +325,11 @@ server <- function(input, output) {
         y    = "Percentage (%)")+
       theme_minimal()+
       theme(
-        plot.title = element_text(face = "bold", size = 18),
-        axis.title.x = element_text(face = "bold", size = 12),
-        axis.title.y = element_text(face = "bold", size = 12),
-        axis.text =  element_text(face = "bold", size = 10)
+        axis.title.x = element_text(size = 10),
+        axis.title.y = element_text(size = 10),
+        axis.text =  element_text(size = 8),
+        legend.title = element_text(size = 10),
+        legend.text  = element_text(size = 8)
       )
     ggplotly(plot_outcomes_mortality1, tooltip = "text")
   })
@@ -359,10 +365,11 @@ server <- function(input, output) {
         y    = "Percentage (%)")+
       theme_minimal()+
       theme(
-        plot.title = element_text(face = "bold", size = 18),
-        axis.title.x = element_text(face = "bold", size = 12),
-        axis.title.y = element_text(face = "bold", size = 12),
-        axis.text =  element_text(face = "bold", size = 10)
+        axis.title.x = element_text(size = 10),
+        axis.title.y = element_text(size = 10),
+        axis.text =  element_text(size = 8),
+        legend.title = element_text(size = 10),
+        legend.text  = element_text(size = 8)
       )
     ggplotly(plot_outcomes_cvd1, tooltip = "text")
   })
@@ -401,10 +408,11 @@ server <- function(input, output) {
         y    = "Percentage (%)")+
     theme_minimal()+
       theme(
-        plot.title = element_text(face = "bold", size = 18),
-        axis.title.x = element_text(face = "bold", size = 12),
-        axis.title.y = element_text(face = "bold", size = 12),
-        axis.text =  element_text(face = "bold", size = 10)
+        axis.title.x = element_text(size = 10),
+        axis.title.y = element_text(size = 10),
+        axis.text =  element_text(size = 8),
+        legend.title = element_text(size = 10),
+        legend.text  = element_text(size = 8)
       )
     ggplotly(plot_outcomes_whf1, tooltip = "text")
   })
@@ -519,6 +527,7 @@ server <- function(input, output) {
 
 
 shinyApp(ui, server)
+
 
 
 
