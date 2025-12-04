@@ -191,7 +191,10 @@ ui <- dashboardPage(
               "b_trt", "Treatment",
               choices  = levels(dig$treatment),
               selected = levels(dig$treatment)
-            )
+            ),
+            hr(),
+            strong("Patients in current selection:"),
+            textOutput("b_n_patients")
           ),
           
           box(
@@ -207,6 +210,10 @@ ui <- dashboardPage(
                 plotOutput("plot_baseline_bmi"),
                 br(),
                 htmlOutput("base_text")
+              ),
+              tabPanel(
+                "BMI density",
+                plotOutput("plot_bmi_density")
               ),
               tabPanel(
                 "Sex proportion by treatment",
@@ -245,8 +252,10 @@ ui <- dashboardPage(
         fluidRow(
           box(
             width = 4, status = "primary", solidHeader = TRUE,
-            title = "Age–BMI correlation",
-            htmlOutput("base_corr_text")
+            title = "Age–BMI correlation and SMD",
+            htmlOutput("base_corr_text"),
+            hr(),
+            htmlOutput("base_smd_text")
           ),
           box(
             width = 8, status = "primary", solidHeader = TRUE,
@@ -256,7 +265,7 @@ ui <- dashboardPage(
         )
       ),
       
-      ##=========Tab3: Clinical Outcomes (unchanged)=========
+      ##=========Tab3: Clinical Outcomes=========
       tabItem(
         tabName = "clinical",
         fluidRow(
@@ -290,7 +299,7 @@ ui <- dashboardPage(
         )
       ),
       
-      ##========== Tab4: Variable explorer (unchanged)=======
+      ##========== Tab4: Variable explorer=======
       tabItem(
         tabName = "relations",
         fluidRow(
@@ -348,7 +357,7 @@ ui <- dashboardPage(
         )
       ),
       
-      ##========= Tab5: Patient explorer (unchanged) ========
+      ##========= Tab5: Patient explorer ========
       tabItem(
         tabName = "patients",
         fluidRow(
@@ -396,7 +405,7 @@ ui <- dashboardPage(
         )
       ),
       
-      ##======== Tab 6: Documentation (unchanged)=======
+      ##======== Tab 6: Documentation=======
       tabItem(
         tabName = "docs",
         fluidRow(
@@ -491,7 +500,6 @@ server <- function(input, output, session) {
     }
   })
   
-  # small, paginated baseline table
   output$about_baseline_table <- renderDT({
     dig %>%
       group_by(treatment) %>%
@@ -511,7 +519,6 @@ server <- function(input, output, session) {
       )
   })
   
-  # SHORT summary: only selected variables
   output$about_summary <- renderPrint({
     vars <- c("age", "bmi", "ejf_per", "klevel", "creatinine", "sbp", "dbp")
     summary(dig[, vars, drop = FALSE])
@@ -556,6 +563,11 @@ server <- function(input, output, session) {
     d
   })
   
+  output$b_n_patients <- renderText({
+    d <- b_data()
+    paste0(nrow(d), " patients")
+  })
+  
   output$plot_baseline_age <- renderPlot({
     d <- b_data()
     validate_data(d)
@@ -571,6 +583,15 @@ server <- function(input, output, session) {
     ggplot(d, aes(x = treatment, y = bmi, fill = treatment)) +
       geom_boxplot(colour = "black") +
       labs(x = "Treatment", y = "BMI") +
+      theme_minimal()
+  })
+  
+  output$plot_bmi_density <- renderPlot({
+    d <- b_data()
+    validate_data(d)
+    ggplot(d, aes(x = bmi, colour = treatment, fill = treatment)) +
+      geom_density(alpha = 0.2) +
+      labs(x = "BMI", y = "Density", colour = "Treatment", fill = "Treatment") +
       theme_minimal()
   })
   
@@ -682,7 +703,39 @@ server <- function(input, output, session) {
     ))
   })
   
-  ##===== Outcomes, relations, patients tabs unchanged =====
+  output$base_smd_text <- renderUI({
+    d <- b_data()
+    validate_data(d)
+    
+    trt_levels <- unique(d$treatment)
+    if (length(trt_levels) != 2) {
+      return(HTML("Standardized mean differences are shown when exactly two treatment groups are selected."))
+    }
+    
+    g1 <- d %>% filter(treatment == trt_levels[1])
+    g2 <- d %>% filter(treatment == trt_levels[2])
+    
+    smd_fun <- function(x1, x2) {
+      m1 <- mean(x1, na.rm = TRUE)
+      m2 <- mean(x2, na.rm = TRUE)
+      s1 <- sd(x1, na.rm = TRUE)
+      s2 <- sd(x2, na.rm = TRUE)
+      sp <- sqrt((s1^2 + s2^2) / 2)
+      (m2 - m1) / sp
+    }
+    
+    smd_age <- round(smd_fun(g1$age, g2$age), 2)
+    smd_bmi <- round(smd_fun(g1$bmi, g2$bmi), 2)
+    
+    HTML(paste0(
+      "<b>Standardized mean difference (", trt_levels[2], " vs ", trt_levels[1], "):</b><br>",
+      "Age SMD: ", smd_age, "<br>",
+      "BMI SMD: ", smd_bmi, "<br>",
+      "Values close to 0 indicate good balance between groups."
+    ))
+  })
+  
+  ##===== Outcomes tab =====
   c_data <- reactive({
     d <- dig
     if (input$c_sex != "All") d <- d %>% filter(sex == input$c_sex)
@@ -770,6 +823,7 @@ server <- function(input, output, session) {
            title = "Distribution of days to death")
   })
   
+  ##===== Variable explorer =====
   output$plot_rel <- renderPlot({
     d <- dig
     validate_data(d)
@@ -808,6 +862,7 @@ server <- function(input, output, session) {
     }
   })
   
+  ##====== Patient explorer =======
   patient_filtered <- reactive({
     d <- dig
     if (input$p_trt != "All")  d <- d %>% filter(treatment == input$p_trt)
