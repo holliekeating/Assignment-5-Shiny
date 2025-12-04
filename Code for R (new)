@@ -1,4 +1,3 @@
-
 library(shiny)
 library(shinydashboard)
 library(dplyr)
@@ -7,7 +6,7 @@ library(DT)
 library(scales)
 
 ## ===== 1. Data import and preprocessing =====
-dig_raw <- read.csv("DIG.csv")
+dig_raw <- read.csv("data/DIG.csv")
 
 dig <- dig_raw %>%
   mutate(
@@ -42,19 +41,20 @@ ui <- dashboardPage(
   
   dashboardSidebar(
     sidebarMenu(
-      menuItem("About",      tabName = "about",    icon = icon("info-circle")),   # Manasvi
-      menuItem("Baseline",   tabName = "baseline", icon = icon("chart-bar")),     # Manasvi
-      menuItem("Outcomes",   tabName = "clinical", icon = icon("heartbeat")),     # Hollie
-      menuItem("Variable explorer", tabName = "relations", icon = icon("project-diagram")), # Xiangqi
-      menuItem("Patient explorer",  tabName = "patients",  icon = icon("users")),            # Xiangqi
-      menuItem("Documentation",     tabName = "docs",      icon = icon("book"))              # Xiangqi
+      id = "sidebar",
+      menuItem("About",      tabName = "about",    icon = icon("info-circle")),
+      menuItem("Baseline",   tabName = "baseline", icon = icon("chart-bar")),
+      menuItem("Outcomes",   tabName = "clinical", icon = icon("heartbeat")),
+      menuItem("Variable explorer", tabName = "relations", icon = icon("project-diagram")),
+      menuItem("Patient explorer",  tabName = "patients",  icon = icon("users")),
+      menuItem("Documentation",     tabName = "docs",      icon = icon("book"))
     )
   ),
   
   dashboardBody(
     tabItems(
       
-      ## ======= Tab 1: About the DIG Study (Manasvi) ======
+      ## ======= Tab 1: About ======
       tabItem(
         tabName = "about",
         fluidRow(
@@ -62,29 +62,119 @@ ui <- dashboardPage(
             width = 12, status = "primary", solidHeader = TRUE,
             title  = "DIG Trial Overview",
             p("The DIG (Digitalis Investigation Group) trial was a randomized, placebo-controlled study evaluating digoxin in patients with heart failure."),
-            p("This dashboard summarises baseline characteristics, treatment differences, clinical outcomes, and provides interactive tools for exploring the DIG dataset.")
+            p("This tab summarises the study purpose, treatment groups, and basic features of the analysis dataset.")
           )
         ),
+        br(),
         fluidRow(
           valueBoxOutput("vb_total",   width = 4),
           valueBoxOutput("vb_digoxin", width = 4),
           valueBoxOutput("vb_placebo", width = 4)
         ),
+        br(),
         fluidRow(
           box(
-            width = 6, title="Treatment distribution", status="info", solidHeader=TRUE,
-            plotOutput("plot_treat")
+            width = 12, status = "info", solidHeader = TRUE,
+            title = "Dataset Information",
+            p(paste0(
+              "The analysis dataset contains ", nrow(dig),
+              " patients and ", ncol(dig_raw),
+              " variables derived from the DIG trial case report forms."
+            )),
+            p("Variables include demographics (age, sex, race), clinical measurements (BMI, blood pressure, creatinine, potassium, ejection fraction), and outcomes (hospitalisation and death).")
+          )
+        ),
+        br(),
+        fluidRow(
+          box(
+            width = 12, status = "primary", solidHeader = TRUE,
+            title = "Key Baseline Characteristics by Treatment",
+            DTOutput("about_baseline_table")
+          )
+        ),
+        br(),
+        fluidRow(
+          box(
+            width = 6, status = "primary", solidHeader = TRUE,
+            title = "Treatment Group Distribution",
+            checkboxGroupInput(
+              "about_trtplot_sex",
+              "Include sex group(s):",
+              choices  = levels(dig$sex),
+              selected = levels(dig$sex)
+            ),
+            plotOutput("about_treatment_plot", height = 300)
           ),
           box(
-            width = 6, title="Sex distribution", status="info", solidHeader=TRUE,
-            plotOutput("plot_sex")
+            width = 6, status = "primary", solidHeader = TRUE,
+            title = "Sex Distribution",
+            checkboxGroupInput(
+              "about_sexplot_trt",
+              "Include treatment group(s):",
+              choices  = levels(dig$treatment),
+              selected = levels(dig$treatment)
+            ),
+            plotOutput("about_sex_plot", height = 300)
+          )
+        ),
+        br(),
+        fluidRow(
+          box(
+            width = 6, status = "primary", solidHeader = TRUE,
+            title = "Age Distribution",
+            plotOutput("about_age_hist", height = 300)
+          ),
+          box(
+            width = 6, status = "primary", solidHeader = TRUE,
+            title = "Data Summary and Preview",
+            tabsetPanel(
+              tabPanel("Summary", verbatimTextOutput("about_summary")),
+              tabPanel("Data Preview", DTOutput("about_preview"))
+            )
+          )
+        ),
+        br(),
+        fluidRow(
+          box(
+            width = 6, status = "primary", solidHeader = TRUE,
+            title = "Age Distribution by Treatment",
+            plotOutput("about_age_boxplot", height = 300)
+          ),
+          box(
+            width = 6, status = "primary", solidHeader = TRUE,
+            title = "BMI Distribution by Treatment",
+            plotOutput("about_bmi_boxplot", height = 300)
+          )
+        ),
+        br(),
+        fluidRow(
+          box(
+            width = 12, status = "primary", solidHeader = TRUE,
+            title = "Guide to Other Tabs",
+            HTML("<b>Baseline tab:</b> Explore baseline variables by treatment with filters and interactive plots."),
+            tags$br(), tags$br(),
+            HTML("<b>Outcomes tab:</b> View mortality and hospitalisation patterns with filters for age, sex and EF."),
+            tags$br(), tags$br(),
+            HTML("<b>Variable explorer:</b> Interactive scatterplots with X/Y variable selection, grouping and correlation."),
+            tags$br(), tags$br(),
+            HTML("<b>Patient explorer:</b> Patient-level table with filters for treatment, sex, age and status."),
+            tags$br(), tags$br(),
+            HTML("<b>Documentation:</b> Detailed explanation of the app, tabs and team contributions.")
           )
         )
       ),
       
-      ## ======== Tab 2: Baseline Characteristics (Manasvi) ======
+      ## ======== Tab 2: Baseline ======
       tabItem(
         tabName = "baseline",
+        fluidRow(
+          box(
+            width = 12, status = "primary", solidHeader = TRUE,
+            title = "Baseline Characteristics",
+            p("Use the filters to explore baseline age, BMI and other variables by treatment, sex and race. All plots and tables update based on your selection.")
+          )
+        ),
+        br(),
         fluidRow(
           box(
             width = 3, status = "primary", solidHeader = TRUE,
@@ -101,45 +191,81 @@ ui <- dashboardPage(
               "b_trt", "Treatment",
               choices  = levels(dig$treatment),
               selected = levels(dig$treatment)
-            )
+            ),
+            hr(),
+            strong("Patients in current selection:"),
+            textOutput("b_n_patients")
           ),
           
           box(
             width = 9, status = "primary", solidHeader = TRUE,
-            title = "Baseline characteristics by treatment",
+            title = "Baseline graphs",
             tabsetPanel(
-              tabPanel("Summary table", DTOutput("tbl_baseline")),
-              tabPanel("Distribution plot",
-                       fluidRow(
-                         column(
-                           6,
-                           selectInput(
-                             "b_var", "Variable",
-                             choices = c("Age" = "age",
-                                         "BMI" = "bmi",
-                                         "Ejection fraction (%)" = "ejf_per",
-                                         "Potassium (KLEVEL)" = "klevel",
-                                         "Creatinine" = "creatinine",
-                                         "Systolic BP" = "sbp",
-                                         "Diastolic BP" = "dbp")
-                           )
-                         ),
-                         column(
-                           6,
-                           radioButtons("b_plot_type", "Plot type",
-                                        choices = c("Histogram" = "hist",
-                                                    "Boxplot"   = "box"),
-                                        inline = TRUE)
-                         )
-                       ),
-                       plotOutput("plot_baseline")
+              tabPanel(
+                "Age histogram",
+                plotOutput("plot_baseline_age")
+              ),
+              tabPanel(
+                "BMI by treatment",
+                plotOutput("plot_baseline_bmi"),
+                br(),
+                htmlOutput("base_text")
+              ),
+              tabPanel(
+                "BMI density",
+                plotOutput("plot_bmi_density")
+              ),
+              tabPanel(
+                "Sex proportion by treatment",
+                plotOutput("base_sex_prop")
+              ),
+              tabPanel(
+                "Custom variable",
+                fluidRow(
+                  column(
+                    6,
+                    selectInput(
+                      "b_var", "Variable",
+                      choices = c("Age" = "age",
+                                  "BMI" = "bmi",
+                                  "Ejection fraction (%)" = "ejf_per",
+                                  "Potassium (KLEVEL)" = "klevel",
+                                  "Creatinine" = "creatinine",
+                                  "Systolic BP" = "sbp",
+                                  "Diastolic BP" = "dbp")
+                    )
+                  ),
+                  column(
+                    6,
+                    radioButtons("b_plot_type", "Plot type",
+                                 choices = c("Histogram" = "hist",
+                                             "Boxplot"   = "box"),
+                                 inline = TRUE)
+                  )
+                ),
+                plotOutput("plot_baseline_var")
               )
             )
+          )
+        ),
+        br(),
+        fluidRow(
+          box(
+            width = 4, status = "primary", solidHeader = TRUE,
+            title = "Age–BMI correlation and SMD",
+            htmlOutput("base_corr_text"),
+            hr(),
+            htmlOutput("base_smd_text")
+          ),
+          box(
+            width = 8, status = "primary", solidHeader = TRUE,
+            title = "Baseline summary table (filtered)",
+            DTOutput("tbl_baseline")
           )
         )
       ),
       
-      ##=========Tab3: Clinical Outcomes (Hollie)=========
+      ##=========Tab3: Clinical Outcomes=========
       tabItem(
         tabName = "clinical",
         fluidRow(
@@ -173,7 +299,7 @@ ui <- dashboardPage(
         )
       ),
       
-      ##========== Tab4: Variable explorer (Xiangqi)=======
+      ##========== Tab4: Variable explorer=======
       tabItem(
         tabName = "relations",
         fluidRow(
@@ -231,7 +357,7 @@ ui <- dashboardPage(
         )
       ),
       
-      ##========= Tab5: Patient explorer (Xiangqi) ========
+      ##========= Tab5: Patient explorer ========
       tabItem(
         tabName = "patients",
         fluidRow(
@@ -279,24 +405,22 @@ ui <- dashboardPage(
         )
       ),
       
-      ##======== Tab 6:Documentation and Help (Xiangqi)=======
+      ##======== Tab 6: Documentation=======
       tabItem(
         tabName = "docs",
         fluidRow(
           box(
             width = 12, status = "primary", solidHeader = TRUE,
             title = "Documentation and Help",
-            
             h3("Purpose"),
             p("This Shiny dashboard provides an interactive overview of the DIG trial dataset,"),
             p("focusing on baseline characteristics, treatment differences, clinical outcomes,"),
             p("and relationships between key clinical variables."),
-            
             h3("Tab overview"),
             tags$ul(
               tags$li(strong("Tab 1 – About:"), " overall description of the DIG study and high-level summaries."),
               tags$li(strong("Tab 2 – Baseline characteristics:"), 
-                      " summary statistics and visualisations of baseline variables by treatment."),
+                      " summary statistics and visualisations of baseline variables by treatment with filters."),
               tags$li(strong("Tab 3 – Clinical outcomes:"), 
                       " mortality and hospitalisation summaries with dynamic filters."),
               tags$li(strong("Tab 4 – Variable explorer:"), 
@@ -305,59 +429,6 @@ ui <- dashboardPage(
                       " patient-level table with filters for age, sex, treatment and status."),
               tags$li(strong("Tab 6 – Documentation & help:"), 
                       " explanation of the app, workflow and team contributions.")
-            ),
-            
-            h3("Team contributions"),
-            tags$ul(
-              tags$li(
-                tags$b("Manasvi — Technical structure and baseline analysis: "),
-                "set up the overall Shiny project structure and created the core layout for the app. ",
-                "Implemented Tab 1 (About) and Tab 2 (Baseline characteristics), prepared baseline summary statistics ",
-                "and visualisations (age, BMI, ejection fraction, sex). ",
-                "Helped keep the UI clean and organised, structured the GitHub repository, ",
-                "and contributed to parts of the written documentation."
-              ),
-              
-              tags$li(
-                tags$b("Hollie — Outcomes and deployment: "),
-                "implemented Tab 3 (Clinical outcomes), including mortality plots, hospitalisation summaries ",
-                "and outcome tables with dynamic filters for age, sex and EF category. ",
-                "Deployed the final app to shinyapps.io and managed GitHub settings such as branch protection ",
-                "and quality assurance checks. Wrote the explanatory text for the outcomes tab."
-              ),
-              
-              tags$li(
-                tags$b("Xiangqi Xu — Interactive exploration and patient filtering: "),
-                "implemented Tab 4 (Variable explorer) and Tab 5 (Patient explorer), ",
-                "including UI controls for X and Y variable selection, colour/grouping options, ",
-                "and filters for age, sex and treatment. Built the reactive patient-level data table, ",
-                "added Pearson correlation calculations for selected variables, ",
-                "and wrote this documentation/help tab (Tab 6)."
-              )
-            ),
-            
-            h3("Why these roles fit each member"),
-            tags$ul(
-              tags$li(
-                tags$b("Manasvi: "),
-                "already had a strong understanding of the DIG dataset from Assignment 4 and had developed ",
-                "baseline analyses before, which made them well suited to setting up the technical structure ",
-                "and leading the baseline tabs."
-              ),
-              
-              tags$li(
-                tags$b("Hollie: "),
-                "owns and manages the main GitHub repository and is comfortable with deployment workflows, ",
-                "so taking responsibility for the outcomes tab and deploying the final app to shinyapps.io ",
-                "was a natural fit."
-              ),
-              
-              tags$li(
-                tags$b("Xiangqi: "),
-                "enjoys working with controlled user interface elements and reactive behaviour that can be built ",
-                "step by step. Tabs 4 and 5 require careful UI design and incremental testing, making them ",
-                "well matched to Xiangqi's strengths in interactive Shiny development."
-              )
             )
           )
         )
@@ -370,7 +441,27 @@ ui <- dashboardPage(
 
 server <- function(input, output, session) {
   
-  ## === tab 1: About (Manasvi) ======
+  ## === About tab ===
+  about_trtplot_data <- reactive({
+    d <- dig
+    if (!is.null(input$about_trtplot_sex) && length(input$about_trtplot_sex) > 0) {
+      d <- d %>% filter(sex %in% input$about_trtplot_sex)
+    } else {
+      d <- d[0, ]
+    }
+    d
+  })
+  
+  about_sexplot_data <- reactive({
+    d <- dig
+    if (!is.null(input$about_sexplot_trt) && length(input$about_sexplot_trt) > 0) {
+      d <- d %>% filter(treatment %in% input$about_sexplot_trt)
+    } else {
+      d <- d[0, ]
+    }
+    d
+  })
+  
   output$vb_total <- renderValueBox({
     valueBox(nrow(dig), "Total patients", icon = icon("users"), color = "teal")
   })
@@ -380,50 +471,179 @@ server <- function(input, output, session) {
   output$vb_placebo <- renderValueBox({
     valueBox(sum(dig$treatment=="Placebo"), "Placebo group", icon = icon("prescription-bottle"), color = "purple")
   })
-  output$plot_treat <- renderPlot({
-    ggplot(dig, aes(x = treatment)) + geom_bar() +
-      labs(x = "Treatment", y = "Count", title = "Treatment distribution")
-  })
-  output$plot_sex <- renderPlot({
-    tab <- dig %>% count(sex) %>% mutate(prop = n/sum(n))
-    ggplot(tab, aes(x = "", y = prop, fill = sex)) +
-      geom_col(width = 1) +
-      coord_polar("y") +
-      theme_void() +
-      labs(title = "Sex distribution") +
-      scale_y_continuous(labels = percent_format(accuracy = 1))
+  
+  output$about_treatment_plot <- renderPlot({
+    d <- about_trtplot_data()
+    if (nrow(d) == 0) {
+      ggplot() +
+        labs(x = "Treatment", y = "Count") +
+        theme_minimal()
+    } else {
+      ggplot(d, aes(x = treatment, fill = treatment)) +
+        geom_bar(colour = "black") +
+        labs(x = "Treatment", y = "Count") +
+        theme_minimal()
+    }
   })
   
-  ##==== tab2 (Manasvi) ====
+  output$about_sex_plot <- renderPlot({
+    d <- about_sexplot_data()
+    if (nrow(d) == 0) {
+      ggplot() +
+        labs(x = "Sex", y = "Count") +
+        theme_minimal()
+    } else {
+      ggplot(d, aes(x = sex, fill = sex)) +
+        geom_bar(colour = "black") +
+        labs(x = "Sex", y = "Count") +
+        theme_minimal()
+    }
+  })
+  
+  output$about_baseline_table <- renderDT({
+    dig %>%
+      group_by(treatment) %>%
+      summarise(
+        n        = n(),
+        mean_age = round(mean(age, na.rm = TRUE), 1),
+        mean_bmi = round(mean(bmi, na.rm = TRUE), 1),
+        male_pct = round(100 * mean(sex == "Male", na.rm = TRUE), 1),
+        .groups  = "drop"
+      ) %>%
+      datatable(
+        rownames = FALSE,
+        options = list(
+          pageLength = 5,
+          dom = "tip"
+        )
+      )
+  })
+  
+  output$about_summary <- renderPrint({
+    vars <- c("age", "bmi", "ejf_per", "klevel", "creatinine", "sbp", "dbp")
+    summary(dig[, vars, drop = FALSE])
+  })
+  
+  output$about_preview <- renderDT({
+    datatable(head(dig, 20))
+  })
+  
+  output$about_age_hist <- renderPlot({
+    ggplot(dig, aes(x = age)) +
+      geom_histogram(binwidth = 5, fill = "steelblue", colour = "white") +
+      labs(x = "Age (years)", y = "Count", title = "Age distribution of patients") +
+      theme_minimal()
+  })
+  
+  output$about_age_boxplot <- renderPlot({
+    ggplot(dig, aes(x = treatment, y = age, fill = treatment)) +
+      geom_boxplot(colour = "black") +
+      labs(x = "Treatment", y = "Age (years)") +
+      theme_minimal()
+  })
+  
+  output$about_bmi_boxplot <- renderPlot({
+    ggplot(dig, aes(x = treatment, y = bmi, fill = treatment)) +
+      geom_boxplot(colour = "black") +
+      labs(x = "Treatment", y = "BMI") +
+      theme_minimal()
+  })
+  
+  ##==== Baseline tab ====
   b_data <- reactive({
     d <- dig
     if (input$b_sex != "All")  d <- d %>% filter(sex == input$b_sex)
     if (input$b_race != "All") d <- d %>% filter(race == input$b_race)
     d <- d %>% filter(age >= input$b_age[1], age <= input$b_age[2])
-    d <- d %>% filter(treatment %in% input$b_trt)
+    if (!is.null(input$b_trt) && length(input$b_trt) > 0) {
+      d <- d %>% filter(treatment %in% input$b_trt)
+    } else {
+      d <- d[0, ]
+    }
     d
   })
   
-  output$tbl_baseline <- renderDT({
+  output$b_n_patients <- renderText({
     d <- b_data()
-    validate_data(d)
-    summary_df <- d %>%
-      group_by(treatment) %>%
-      summarise(
-        n         = n(),
-        mean_age  = mean(age, na.rm = TRUE),
-        mean_bmi  = mean(bmi, na.rm = TRUE),
-        mean_ef   = mean(ejf_per, na.rm = TRUE),
-        mean_k    = mean(klevel, na.rm = TRUE),
-        mean_cre  = mean(creatinine, na.rm = TRUE),
-        mean_sbp  = mean(sbp, na.rm = TRUE),
-        mean_dbp  = mean(dbp, na.rm = TRUE),
-        .groups   = "drop"
-      )
-    datatable(summary_df, rownames = FALSE, options = list(pageLength = 5))
+    paste0(nrow(d), " patients")
   })
   
-  output$plot_baseline <- renderPlot({
+  output$plot_baseline_age <- renderPlot({
+    d <- b_data()
+    validate_data(d)
+    ggplot(d, aes(x = age, fill = treatment)) +
+      geom_histogram(binwidth = 5, colour = "black", alpha = 0.7, position = "identity") +
+      labs(x = "Age (years)", y = "Count", fill = "Treatment") +
+      theme_minimal()
+  })
+  
+  output$plot_baseline_bmi <- renderPlot({
+    d <- b_data()
+    validate_data(d)
+    ggplot(d, aes(x = treatment, y = bmi, fill = treatment)) +
+      geom_boxplot(colour = "black") +
+      labs(x = "Treatment", y = "BMI") +
+      theme_minimal()
+  })
+  
+  output$plot_bmi_density <- renderPlot({
+    d <- b_data()
+    validate_data(d)
+    ggplot(d, aes(x = bmi, colour = treatment, fill = treatment)) +
+      geom_density(alpha = 0.2) +
+      labs(x = "BMI", y = "Density", colour = "Treatment", fill = "Treatment") +
+      theme_minimal()
+  })
+  
+  output$base_text <- renderUI({
+    d <- b_data()
+    validate_data(d)
+    
+    n_pat    <- nrow(d)
+    mean_age <- round(mean(d$age, na.rm = TRUE), 1)
+    mean_bmi <- round(mean(d$bmi, na.rm = TRUE), 1)
+    
+    by_trt <- d %>%
+      group_by(treatment) %>%
+      summarise(
+        n        = n(),
+        mean_bmi = round(mean(bmi, na.rm = TRUE), 1),
+        .groups  = "drop"
+      )
+    
+    txt_trt <- paste(
+      by_trt$treatment, ": n = ", by_trt$n,
+      ", mean BMI = ", by_trt$mean_bmi,
+      collapse = "<br>"
+    )
+    
+    HTML(paste0(
+      "<b>Current selection:</b><br>",
+      "Patients: ", n_pat, "<br>",
+      "Mean age: ", mean_age, " years<br>",
+      "Overall mean BMI: ", mean_bmi, "<br><br>",
+      "<b>BMI by treatment:</b><br>",
+      txt_trt
+    ))
+  })
+  
+  output$base_sex_prop <- renderPlot({
+    d <- b_data()
+    validate_data(d)
+    
+    d_sum <- d %>%
+      count(treatment, sex) %>%
+      group_by(treatment) %>%
+      mutate(prop = n / sum(n))
+    
+    ggplot(d_sum, aes(x = treatment, y = prop, fill = sex)) +
+      geom_col(colour = "black", position = "fill") +
+      scale_y_continuous(labels = percent) +
+      labs(x = "Treatment", y = "Proportion", fill = "Sex") +
+      theme_minimal()
+  })
+  
+  output$plot_baseline_var <- renderPlot({
     d <- b_data()
     validate_data(d)
     var <- input$b_var
@@ -440,7 +660,82 @@ server <- function(input, output, session) {
     }
   })
   
-  ##===== tab 3 (Hollie) ======
+  output$tbl_baseline <- renderDT({
+    d <- b_data()
+    validate_data(d)
+    summary_df <- d %>%
+      group_by(treatment) %>%
+      summarise(
+        n         = n(),
+        mean_age  = round(mean(age, na.rm = TRUE), 1),
+        mean_bmi  = round(mean(bmi, na.rm = TRUE), 1),
+        mean_ef   = round(mean(ejf_per, na.rm = TRUE), 1),
+        mean_k    = round(mean(klevel, na.rm = TRUE), 2),
+        mean_cre  = round(mean(creatinine, na.rm = TRUE), 2),
+        mean_sbp  = round(mean(sbp, na.rm = TRUE), 1),
+        mean_dbp  = round(mean(dbp, na.rm = TRUE), 1),
+        .groups   = "drop"
+      )
+    datatable(summary_df, rownames = FALSE, options = list(pageLength = 5))
+  })
+  
+  output$base_corr_text <- renderUI({
+    d <- b_data()
+    if (nrow(d) < 3) {
+      return(HTML("Not enough data to calculate correlation between age and BMI for the current selection."))
+    }
+    r <- suppressWarnings(cor(d$age, d$bmi, use = "complete.obs"))
+    if (is.na(r)) {
+      return(HTML("Correlation not available for age and BMI in the current selection."))
+    }
+    strength <- case_when(
+      abs(r) < 0.2 ~ "very weak",
+      abs(r) < 0.4 ~ "weak",
+      abs(r) < 0.6 ~ "moderate",
+      abs(r) < 0.8 ~ "strong",
+      TRUE         ~ "very strong"
+    )
+    direction <- ifelse(r >= 0, "positive", "negative")
+    HTML(paste0(
+      "<b>Correlation summary:</b><br>",
+      "Pearson correlation between age and BMI in the filtered patients is ",
+      round(r, 2), " (", strength, " ", direction, " association)."
+    ))
+  })
+  
+  output$base_smd_text <- renderUI({
+    d <- b_data()
+    validate_data(d)
+    
+    trt_levels <- unique(d$treatment)
+    if (length(trt_levels) != 2) {
+      return(HTML("Standardized mean differences are shown when exactly two treatment groups are selected."))
+    }
+    
+    g1 <- d %>% filter(treatment == trt_levels[1])
+    g2 <- d %>% filter(treatment == trt_levels[2])
+    
+    smd_fun <- function(x1, x2) {
+      m1 <- mean(x1, na.rm = TRUE)
+      m2 <- mean(x2, na.rm = TRUE)
+      s1 <- sd(x1, na.rm = TRUE)
+      s2 <- sd(x2, na.rm = TRUE)
+      sp <- sqrt((s1^2 + s2^2) / 2)
+      (m2 - m1) / sp
+    }
+    
+    smd_age <- round(smd_fun(g1$age, g2$age), 2)
+    smd_bmi <- round(smd_fun(g1$bmi, g2$bmi), 2)
+    
+    HTML(paste0(
+      "<b>Standardized mean difference (", trt_levels[2], " vs ", trt_levels[1], "):</b><br>",
+      "Age SMD: ", smd_age, "<br>",
+      "BMI SMD: ", smd_bmi, "<br>",
+      "Values close to 0 indicate good balance between groups."
+    ))
+  })
+  
+  ##===== Outcomes tab =====
   c_data <- reactive({
     d <- dig
     if (input$c_sex != "All") d <- d %>% filter(sex == input$c_sex)
@@ -448,9 +743,9 @@ server <- function(input, output, session) {
     d <- d %>%
       mutate(
         ef_cat = case_when(
-          ejf_per < 40              ~ "Low EF",
-          ejf_per >= 40 & ejf_per < 50 ~ "Mid-range EF",
-          ejf_per >= 50             ~ "Preserved EF",
+          ejf_per < 40                  ~ "Low EF",
+          ejf_per >= 40 & ejf_per < 50  ~ "Mid-range EF",
+          ejf_per >= 50                 ~ "Preserved EF",
           TRUE ~ NA_character_
         )
       )
@@ -464,10 +759,10 @@ server <- function(input, output, session) {
     mort <- d %>%
       group_by(treatment) %>%
       summarise(
-        n        = n(),
-        deaths   = sum(death == 1, na.rm = TRUE),
+        n         = n(),
+        deaths    = sum(death == 1, na.rm = TRUE),
         death_pct = 100 * deaths / n,
-        .groups  = "drop"
+        .groups   = "drop"
       )
     datatable(mort, rownames = FALSE, options = list(pageLength = 5))
   })
@@ -528,7 +823,7 @@ server <- function(input, output, session) {
            title = "Distribution of days to death")
   })
   
-  ##===== tab4 (Xiangqi) ======
+  ##===== Variable explorer =====
   output$plot_rel <- renderPlot({
     d <- dig
     validate_data(d)
@@ -567,7 +862,7 @@ server <- function(input, output, session) {
     }
   })
   
-  ##====== tab5 (Xiangqi) =======
+  ##====== Patient explorer =======
   patient_filtered <- reactive({
     d <- dig
     if (input$p_trt != "All")  d <- d %>% filter(treatment == input$p_trt)
@@ -602,5 +897,4 @@ server <- function(input, output, session) {
   })
 }
 
-shinyApp(ui, server)   
-
+shinyApp(ui, server)
