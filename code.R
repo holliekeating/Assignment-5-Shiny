@@ -10,7 +10,8 @@ dig.df <- read_csv("data/DIG.csv")%>%
   mutate(TRTMT = recode(TRTMT, '0' = "Placebo", `1` = "Treatment"),
          WHF = recode(WHF, '0' = "Healthy", '1'= "Worsening Heart Failure"),
          HOSP = recode(HOSP, '0' = "No Hospitalisation", '1' = "Hospitalised"),
-         DEATH = recode(DEATH, '0' = "Alive", '1' = "Deceased"))%>%
+         DEATH = recode(DEATH, '0' = "Alive", '1' = "Deceased"),
+         CVD = recode(CVD, '0' = "Healthy", '1' = "Cardiovascular Disease"))%>%
   select(ID, TRTMT, AGE, SEX, BMI, KLEVEL, CREAT, DIABP, SYSBP, HYPERTEN, CVD, WHF, DIG, HOSP, HOSPDAYS, DEATH, DEATHDAY)
 
   dig.df <- dig.df%>%
@@ -20,7 +21,7 @@ trt_choices  <- sort(unique(dig.df$TRTMT))
 whf_choices  <- sort(unique(dig.df$WHF))
 hosp_choices <- sort(unique(dig.df$HOSP))
 death_choices <- sort(unique(dig.df$DEATH))
-
+cvd_choices <- sort(unique(dig.df$CVD))
 
 ui <- dashboardPage(
   
@@ -79,7 +80,7 @@ ui <- dashboardPage(
         box(
         title = "Rate of Mortality between Groups",
         status = "primary", solidHeader = TRUE,
-        width = 6,
+        width = 4,
         selectInput(
           inputId  = "TRTMT_mortality",
           label    = "Select Treatment Group:",
@@ -95,16 +96,40 @@ ui <- dashboardPage(
         
         br(),
 
-        plotlyOutput("plot_outcomes_mortality", height = 500),
+        plotlyOutput("plot_outcomes_mortality", height = 400),
         
         br()
       ),
+        
+ # Cardiovascular disease
+ box(
+   title = "Exploring the Relationship between Cardiovascular Disease and Mortality between Groups",
+   status = "primary", solidHeader = TRUE,
+   width = 4,
+   selectInput(
+     inputId  = "TRTMT_cvd",
+     label    = "Select Treatment Group:",
+     choices  = trt_choices,
+     selected = trt_choices, 
+     multiple = TRUE
+   ),
+   checkboxGroupInput(
+     inputId  = "CVD",
+     label    = "Select Patient Status:",
+     choices  = cvd_choices,
+     selected = cvd_choices
+   ),
+   
+   br(),
+   
+   plotlyOutput("plot_outcomes_cvd", height = 400)
+ ),   
           
  # Worsening heart failure          
       box(
         title = "Worsening Heart Failure and Hospitalisation Status",
         status = "primary", solidHeader = TRUE,
-        width = 6,
+        width = 4,
       selectInput(
         inputId  = "TRTMT_whf",
         label    = "Select Treatment Group:",
@@ -127,7 +152,7 @@ ui <- dashboardPage(
       
       br(),
       
-        plotlyOutput("plot_outcomes_whf", height = 500)
+        plotlyOutput("plot_outcomes_whf", height = 400)
       )
 ) 
 ),
@@ -187,7 +212,6 @@ server <- function(input, output) {
     )
   })
   
-  dig.df$DEATH
   
   output$mortality_placebo_vb <- renderValueBox({
     
@@ -216,7 +240,7 @@ server <- function(input, output) {
     )
   })
   
-  #Plots
+  #Plots: Rate of Mortality between groups
   mortality_sub <- reactive({
     req(input$TRTMT_mortality, input$DEATH)
     
@@ -256,6 +280,47 @@ server <- function(input, output) {
       )
     ggplotly(plot_outcomes_mortality1, tooltip = "text")
   })
+
+  
+# Patient outcomes: CVD and mortality
+  cvd_sub <- reactive({
+    req(input$TRTMT_cvd, input$CVD)
+    
+    dig.df %>%
+      filter(TRTMT %in% input$TRTMT_cvd) %>%
+      filter(CVD %in% input$CVD)
+  })
+  output$plot_outcomes_cvd <- renderPlotly({ 
+    dat <- cvd_sub()
+    req(nrow(dat) > 0)  
+    
+    plot_outcomes_cvd1 <- 
+      dat %>%
+      ggplot(aes(
+        x = TRTMT,
+        y = after_stat(100 * count / sum(count)),
+        fill = CVD,
+        text = paste0(
+          "Treatment Group: ", TRTMT, "<br>",
+          "Patient Status: ", CVD
+        ))) +
+      geom_bar(position = "dodge", colour = "black") +
+      scale_fill_manual(values = c("Healthy"= "lightyellow", "Cardiovascular Disease" = "lightblue"))+
+      labs(
+        fill = "Patient Status",
+        x    = "Treatment Group",
+        y    = "Percentage (%)")+
+      theme_minimal()+
+      theme(
+        plot.title = element_text(face = "bold", size = 18),
+        axis.title.x = element_text(face = "bold", size = 12),
+        axis.title.y = element_text(face = "bold", size = 12),
+        axis.text =  element_text(face = "bold", size = 10)
+      )
+    ggplotly(plot_outcomes_cvd1, tooltip = "text")
+  })
+
+
   
 
 # Patient outcomes: rate of hospitalizations and WHF between groups   
@@ -390,3 +455,4 @@ server <- function(input, output) {
 
 
 shinyApp(ui, server)
+
