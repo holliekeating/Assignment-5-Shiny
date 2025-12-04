@@ -58,19 +58,18 @@ ui <- dashboardPage(
           box(
             title = "Patient Outcomes",
             status = "primary",
-            width = 10,
+            width = 3,
             solidHeader = TRUE,
             p("This section explores patient outcomes in the Digitalis Investigation Group (DIG) Trial. 
-              Use the filters to explore the rate of mortality and hospitalisations between groups")
-          )
+              34.9% of patients died overall in the trial. 35.1% of patients in the placebo group died. 34.8% of patients in the treatment group died.  
+              Use the filters to explore the rate of mortality, rate of cardiovascular disease and rate of hospitalisations between groups.")
         ),
-      
-      br(),
-      
-      fluidRow(
+    
         valueBoxOutput("mortality_vb", width = 3),
         valueBoxOutput("mortality_placebo_vb", width = 3),
-        valueBoxOutput("mortality_treatment_vb", width = 3)
+        valueBoxOutput("mortality_treatment_vb", width = 3),
+        valueBoxOutput("cvd_treatment_vb", width = 4),
+        valueBoxOutput("cvd_placebo_vb", width = 4)
       ),
       
       br(),
@@ -236,6 +235,34 @@ server <- function(input, output) {
     valueBox(
       value    = paste0(perc_deaths_trtmt, "%"),
       subtitle = "Mortality Rate in Treatment Group",
+      color    = "green"
+    )
+  })
+  
+  # Valueboxes cvd rates between groups
+  output$cvd_placebo_vb <- renderValueBox({
+    
+    placebo_total <- sum(dig.df$TRTMT == "Placebo", na.rm = TRUE)
+    placebo_cvd <- sum(dig.df$TRTMT == "Placebo" & dig.df$CVD == "Cardiovascular Disease")
+    perc_cvd_placebo <- round(100*placebo_cvd/placebo_total, 1)
+    
+    
+    valueBox(
+      value    = paste0(perc_cvd_placebo, "%"),
+      subtitle = "Cardiovascular Disease Rate in Placebo Group",
+      color    = "purple"
+    )
+  })
+  
+  output$cvd_treatment_vb <- renderValueBox({
+    
+    trtmt_total <- sum(dig.df$TRTMT == "Treatment", na.rm = TRUE)
+    trtmt_cvd <- sum(dig.df$TRTMT == "Treatment" & dig.df$CVD == "Cardiovascular Disease")
+    perc_cvd_trtmt <- round(100*trtmt_cvd/trtmt_total, 1)
+    
+    valueBox(
+      value    = paste0(perc_cvd_trtmt, "%"),
+      subtitle = "Cardiovascular Disease Rate in Treatment Group",
       color    = "green"
     )
   })
@@ -455,4 +482,5 @@ server <- function(input, output) {
 
 
 shinyApp(ui, server)
+
 
