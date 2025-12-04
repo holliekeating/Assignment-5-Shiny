@@ -185,8 +185,28 @@ ui <- dashboardPage(
             solidHeader = TRUE,
             width = 6,
             plotlyOutput("plot_surv_treatment", height = 400),
+            ),
+          br(),
+            
+        fluidRow(
+          box(
+            title = "Placebo - Survival Probabilities Table",
+            status = "primary",
+            solidHeader = TRUE,
+            width = 6,
+            tableOutput("placebo_table_surv")
+          ),
           
-          br()
+          br(),
+          
+          fluidRow(
+          box(
+            title = "Treatment - Survival Table",
+            status = "primary",
+            solidHeader = TRUE,
+            width = 6,
+            tableOutput("treatment_table_surv"))
+           ) 
         )
       )
     )
@@ -473,8 +493,25 @@ server <- function(input, output) {
         yaxis = list(title = "Probability of Survival %", range = c(50, 100))
       )
   })
+
+# Trial outcomes: Tables probability of survival over time 
+  output$placebo_table_surv <- renderTable({
+    placebo_df %>%
+      transmute(
+        "Month" = month,
+        "Survival (%)" = round(survival_perc,2),
+        "Number at risk" = n_risk,
+        "Deaths"= deaths)
+  })
   
-  
+  output$treatment_table_surv <- renderTable({
+    treatment_df %>%
+      transmute(
+        "Month"= month,
+        "Survival (%)" = round(survival_perc,2),
+        "Number at risk"= n_risk,
+        "Deaths" = deaths)
+  })
   
 
   
@@ -482,5 +519,6 @@ server <- function(input, output) {
 
 
 shinyApp(ui, server)
+
 
 
