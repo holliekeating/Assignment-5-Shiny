@@ -193,13 +193,15 @@ ui <- dashboardPage(
             title = "Guide to Other Tabs",
             HTML("<b>Baseline tab:</b> Explore baseline variables by treatment with filters and interactive plots."),
             tags$br(), tags$br(),
-            HTML("<b>Outcomes tab:</b> View mortality, cardiovascular disease and hospitalisation patterns, plus survival over time."),
+            HTML("<b>Patient Outcomes tab:</b> View mortality, cardiovascular disease and hospitalisation patterns, plus survival over time."),
             tags$br(), tags$br(),
-            HTML("<b>Variable explorer:</b> Interactive scatterplots with X/Y variable selection, grouping and correlation."),
+            HTML("<b>Trail outcomes tab:</b> View survival probabilities over time and assess treatment effectiveness."),
             tags$br(), tags$br(),
-            HTML("<b>Patient explorer:</b> Patient-level table with filters for treatment, sex, age and status."),
+            HTML("<b>Variable explorer tab:</b> Interactive scatterplots with X/Y variable selection, grouping and correlation."),
             tags$br(), tags$br(),
-            HTML("<b>Documentation:</b> Detailed explanation of the app, tabs and team contributions.")
+            HTML("<b>Patient explorer tab:</b> Patient-level table with filters for treatment, sex, age and status."),
+            tags$br(), tags$br(),
+            HTML("<b>Documentation tab:</b> Detailed explanation of the app, tabs and team contributions.")
           )
         )
       ),
