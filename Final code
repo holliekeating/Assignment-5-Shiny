@@ -35,7 +35,7 @@ dig <- dig_raw %>%
     nhosp       = NHOSP
   )
 
-## Hollie 用的数据 dig.df：带文本标签 + MONTH，用于 Outcomes & Trial ----
+
 dig.df <- dig_raw %>%
   mutate(
     TRTMT = recode(as.character(TRTMT),
@@ -81,9 +81,10 @@ ui <- dashboardPage(
   dashboardSidebar(
     sidebarMenu(
       id = "sidebar",
-      menuItem("About",      tabName = "about",    icon = icon("info-circle")),
-      menuItem("Baseline",   tabName = "baseline", icon = icon("chart-bar")),
-      menuItem("Outcomes",   tabName = "clinical", icon = icon("heartbeat")),
+      menuItem("About",            tabName = "about",    icon = icon("info-circle")),
+      menuItem("Baseline",         tabName = "baseline", icon = icon("chart-bar")),
+      menuItem("Patient outcomes", tabName = "clinical", icon = icon("heartbeat")),
+      menuItem("Trial outcomes",   tabName = "trial",    icon = icon("hourglass-half")),
       menuItem("Variable explorer", tabName = "relations", icon = icon("project-diagram")),
       menuItem("Patient explorer",  tabName = "patients",  icon = icon("users")),
       menuItem("Documentation",     tabName = "docs",      icon = icon("book"))
@@ -304,10 +305,9 @@ ui <- dashboardPage(
         )
       ),
       
-      ##========= Tab3: Clinical Outcomes（Hollie 替换后的部分）=========
+      ##========= Tab3: Patient Outcomes=========
       tabItem(
         tabName = "clinical",
-        
         
         fluidRow(
           box(
@@ -408,10 +408,12 @@ ui <- dashboardPage(
               plotlyOutput("plot_outcomes_whf", height = 500)
             )
           )
-        ),
-        
-        br(),
-        
+        )
+      ),
+      
+      ##========= Tab4: Trial Outcomes – Survival over Time=========
+      tabItem(
+        tabName = "trial",
         
         fluidRow(
           box(
@@ -462,7 +464,7 @@ ui <- dashboardPage(
         )
       ),
       
-      ##========== Tab4: Variable explorer=======
+      ##========== Tab5: Variable explorer=======
       tabItem(
         tabName = "relations",
         fluidRow(
@@ -520,7 +522,7 @@ ui <- dashboardPage(
         )
       ),
       
-      ##========= Tab5: Patient explorer ========
+      ##========= Tab6: Patient explorer ========
       tabItem(
         tabName = "patients",
         fluidRow(
@@ -568,7 +570,7 @@ ui <- dashboardPage(
         )
       ),
       
-      ##======== Tab 6: Documentation=======
+      ##======== Tab 7: Documentation=======
       tabItem(
         tabName = "docs",
         fluidRow(
@@ -584,13 +586,15 @@ ui <- dashboardPage(
               tags$li(strong("Tab 1 – About:"), " overall description of the DIG study and high-level summaries."),
               tags$li(strong("Tab 2 – Baseline characteristics:"), 
                       " summary statistics and visualisations of baseline variables by treatment with filters."),
-              tags$li(strong("Tab 3 – Clinical outcomes:"), 
-                      " mortality, cardiovascular disease, hospitalisation summaries and survival analyses."),
-              tags$li(strong("Tab 4 – Variable explorer:"), 
+              tags$li(strong("Tab 3 – Patient outcomes:"), 
+                      " mortality, cardiovascular disease and hospitalisation summaries."),
+              tags$li(strong("Tab 4 – Trial outcomes:"), 
+                      " survival curves and survival tables by treatment group."),
+              tags$li(strong("Tab 5 – Variable explorer:"), 
                       " interactive scatterplots with X/Y variable selection, grouping and correlation."),
-              tags$li(strong("Tab 5 – Patient explorer:"), 
+              tags$li(strong("Tab 6 – Patient explorer:"), 
                       " patient-level table with filters for age, sex, treatment and status."),
-              tags$li(strong("Tab 6 – Documentation & help:"), 
+              tags$li(strong("Tab 7 – Documentation & help:"), 
                       " explanation of the app, workflow and team contributions.")
             )
           )
@@ -604,7 +608,7 @@ ui <- dashboardPage(
 
 server <- function(input, output, session) {
   
-  ## === About tab ===
+  
   about_trtplot_data <- reactive({
     d <- dig
     if (!is.null(input$about_trtplot_sex) && length(input$about_trtplot_sex) > 0) {
@@ -899,7 +903,6 @@ server <- function(input, output, session) {
   })
   
   ##===== Outcomes tab（Hollie） =====
-  
   
   output$mortality_vb <- renderValueBox({
     total_patients <- nrow(dig.df)
